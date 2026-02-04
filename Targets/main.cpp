@@ -1,10 +1,3 @@
-#include <fstream>
-#include <vector>
-#include <stdlib.h>
-#include <iostream>
-#include <math.h>
-#include <bitset>
-#include "pzcmesh.h"
 #include <iostream>
 #include <filesystem>
 #include <math.h>
@@ -20,7 +13,7 @@
 #include "TPZGenGrid2D.h"
 #include "TPZVTKGeoMesh.h"
 #include "pzvec.h"
-#include <gmsh.h>
+
 #include "TPZVTKGenerator.h"
 #include <fstream>
 #include "TPZMaterial.h"
@@ -44,8 +37,46 @@
 #include "TPZMultiphysicsCompMesh.h"
 #include "TSFMixedDarcy.h"
 #include "TPZHDivApproxCreator.h"
+//hola
+int mainDarcy2d();
+int mainDarcy3D();
+TPZCompMesh* HdivMesh(TPZGeoMesh *);
+TPZCompMesh* Pressuremesh(TPZGeoMesh *, int order);
+void GetAtomicIds(TPZGeoMesh *geomesh, std::set<int> &volId, std::set<int> &bcId);
+void insertAtomicMaterials(TPZCompMesh *cmesh, std::set<int> matIdsVol, std::set<int> matIdsBcs);
+
+//using namespace cv;
+//using namespace std;
+//Function to generate a mesh using gmsh library
+TPZGeoMesh* generateGMeshWithPhysTagVec(std::string& filename, TPZManVector<std::map<std::string,int>,4>& dim_name_and_physical_tagFine);
+void findElDim(TPZStack<TPZGeoElSide> &allneigh, int dim, TPZStack<TPZGeoElSide> &allneighdim);
+
+
+int main3D();
+int main2D();
 int main2DFracVug();
 int mainDarcy3D ();
+
+//int main(){
+//
+//    return mainDarcy3D();
+//}
+
+
+TPZGeoMesh* generateGMeshWithPhysTagVec(std::string& filename, TPZManVector<std::map<std::string,int>,4>& dim_name_and_physical_tagFine){
+            
+    // Creating gmsh reader
+    TPZGmshReader  GeometryFine;
+    TPZGeoMesh *gmeshFine;
+    REAL l = 1.0;
+    GeometryFine.SetCharacteristiclength(l);
+    
+    // Reading mesh
+    GeometryFine.SetDimNamePhysical(dim_name_and_physical_tagFine);
+    gmeshFine = GeometryFine.GeometricGmshMesh(filename,nullptr,false);
+    return gmeshFine;
+}
+
 int main2DFracVug(){
       TPZGeoMesh *gmesh = new TPZGeoMesh;
       TPZManVector<std::map<std::string,int>,4> dim_name_and_physical_tagCoarse(4);

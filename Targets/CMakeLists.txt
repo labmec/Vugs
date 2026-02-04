@@ -2,9 +2,6 @@
 
 
 
-add_executable(Targets main.cpp)
+add_executable(VugsMain main.cpp)
+target_link_libraries(VugsMain PRIVATE NeoPZ::pz)
 
-
-set(All_Dirs  NeoPZ::pz  ${OpenCV_INCLUDE_DIRS} ${CMAKE_CURRENT_SOURCE_DIR} )
-
-target_include_directories(Targets PUBLIC All_Dirs)

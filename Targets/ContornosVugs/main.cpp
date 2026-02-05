@@ -37,30 +37,16 @@
 #include "TPZMultiphysicsCompMesh.h"
 #include "TSFMixedDarcy.h"
 #include "TPZHDivApproxCreator.h"
-//hola
-int mainDarcy2d();
-int mainDarcy3D();
-TPZCompMesh* HdivMesh(TPZGeoMesh *);
-TPZCompMesh* Pressuremesh(TPZGeoMesh *, int order);
-void GetAtomicIds(TPZGeoMesh *geomesh, std::set<int> &volId, std::set<int> &bcId);
-void insertAtomicMaterials(TPZCompMesh *cmesh, std::set<int> matIdsVol, std::set<int> matIdsBcs);
 
-//using namespace cv;
-//using namespace std;
+using namespace std;
 //Function to generate a mesh using gmsh library
 TPZGeoMesh* generateGMeshWithPhysTagVec(std::string& filename, TPZManVector<std::map<std::string,int>,4>& dim_name_and_physical_tagFine);
 void findElDim(TPZStack<TPZGeoElSide> &allneigh, int dim, TPZStack<TPZGeoElSide> &allneighdim);
 
 
-int main3D();
-int main2D();
 int main2DFracVug();
 int mainDarcy3D ();
 
-//int main(){
-//
-//    return mainDarcy3D();
-//}
 
 
 TPZGeoMesh* generateGMeshWithPhysTagVec(std::string& filename, TPZManVector<std::map<std::string,int>,4>& dim_name_and_physical_tagFine){
@@ -81,160 +67,144 @@ int main2DFracVug(){
       TPZGeoMesh *gmesh = new TPZGeoMesh;
       TPZManVector<std::map<std::string,int>,4> dim_name_and_physical_tagCoarse(4);
       dim_name_and_physical_tagCoarse[2]["k11"] = 1;
-      //dim_name_and_physical_tagCoarse[2]["SmallVug"] = 7;
-      //dim_name_and_physical_tagCoarse[2]["BigVug"] = 8;
+
       dim_name_and_physical_tagCoarse[2]["Vugs"] = 6;
       dim_name_and_physical_tagCoarse[1]["inlet"] = 2;
       dim_name_and_physical_tagCoarse[1]["outlet"] = 3;
       dim_name_and_physical_tagCoarse[1]["noflux"] = 4;
-      //dim_name_and_physical_tagCoarse[1]["SmallFract"] = 5;
-      //dim_name_and_physical_tagCoarse[1]["BigFract"] = 6;
 
 
-      
-      //std::string filename="/Users/victorvillegassalabarria/python-test/testskel4.msh";
-      //std::string filename="/Users/victorvillegassalabarria/python-test/testskel30sp.msh";
+
       std::string filename="/Users/victorvillegassalabarria/python-test/testskelSLICE77SP.msh";
 
       gmesh = generateGMeshWithPhysTagVec(filename, dim_name_and_physical_tagCoarse);
-     
+    int ncreated = 0;
+    int nels = gmesh->NElements();
+
+
+    for (int iel = 0; iel< nels; iel++) {
+        TPZGeoEl *gel = gmesh->Element(iel);
+        if (!gel){
+            continue;
+        }
+        if (gel->Dimension() != 2) {
+            continue;
+        }
+        int nsides= gel->NSides();
+        int ncorners= gel->NCornerNodes();
+        int firstside= nsides-ncorners-1;
+
+
+        for (int iside = firstside; iside<nsides; iside++) {
+            TPZGeoElSide gelside(gel, iside);
+            int matid = gelside.Element()->MaterialId();
+            TPZStack<TPZGeoElSide> allneigh;
+            gelside.AllNeighbours(allneigh);
+//            std::cout<<allneigh[0].Element()<<std::endl;
+            int nneighs = allneigh.size();
+            //verify Dimension
+            int verify =0;
+
+            for (int ineigh=0; ineigh<nneighs; ineigh++) {
+                TPZGeoEl *gelneigh = allneigh[ineigh].Element();
+                int dimen = gelneigh->Dimension();
+
+                if (dimen == 1) {
+                    verify = 1;
+                }
+            }
+            if(verify == 1){
+                continue;
+            }
+
+            for (int ineigh=0; ineigh<nneighs; ineigh++) {
+                TPZGeoEl *gelneigh = allneigh[ineigh].Element();
+                int matNeigh = gelneigh->MaterialId();
+                if (matNeigh != matid && (gel->Dimension() == gelneigh->Dimension()) ) {
+                   gelside.Element()->CreateBCGeoEl(iside, 100);
+                   ncreated++;
+                }
+            }
+        }
+    }
+
+    std::cout<< "se crearon: " << ncreated << " elements"<<std::endl;
+
+    gmesh->BuildConnectivity();
+    int nels2 = gmesh->NElements();
+    TPZVec<int> verificador(nels2, 0);
+    // creador de contornos por ids
+    int mat=100;
+    for (int iel =nels-1; iel<nels2; iel++) {
+
+        TPZGeoEl * gel = gmesh->Element(iel);
+        if (gel->MaterialId() ==100) {
+            std::cout<<"ok "<<std::endl;
+        }
+        if (!gel) {
+            continue;
+        }
+        if (gel->Dimension() != 1) {
+            continue;
+        }
+        if (verificador[iel]==1) {
+            continue;
+        }
+        if (gel->MaterialId() != 100) {
+            continue;
+        }
+        int side = 1;
+
+        TPZGeoElSide gelside(gel, side);
+
+        TPZStack<TPZGeoElSide> allneigh;
+        gelside.AllNeighbours(allneigh);
+        TPZStack<TPZGeoElSide> allneighdim;
+        findElDim(allneigh, 1, allneighdim);
+        int ntest = allneighdim.size();
+        TPZGeoElSide gelneigh = allneighdim[0];
+        gel->SetMaterialId(mat);
+        while (gel != gelneigh.Element()) {
+            TPZStack<TPZGeoElSide> allneigh;
+            int sidetest = gelneigh.Side();
+            if (sidetest==0) {
+                gelneigh.SetSide(1);
+            }
+            else{
+                gelneigh.SetSide(0);
+            }
+            gelneigh.AllNeighbours(allneigh);
+            TPZStack<TPZGeoElSide> allneighdim;
+            findElDim(allneigh, 1, allneighdim);
+            int indexneig = gelneigh.Element()->Index();
+            verificador[indexneig] =1;
+            gelneigh.Element()->SetMaterialId(mat);
+            gelneigh =allneighdim[0];
+        }
+
+
+        mat++;
+        int ok=0;
+    }
+
+  
       std::ofstream file3("TestGeoMesh2Dskel.vtk");
       TPZVTKGeoMesh::PrintGMeshVTK(gmesh, file3);
-      //Create CompMesh
-      TPZCompMesh *cmesh =  new TPZCompMesh(gmesh);
-    
-        //Create Materials
-        int matId=1;
-        int dim2d = 2;
-        int matIdsmallFract=2;
-        int matIBigFract=2;
-        int dim1d=1;
-    
-        TPZDarcyFlow *matDarcy = new TPZDarcyFlow(matId, dim2d);
-//        TPZDarcyFlow *matDarcySmallFract= new TPZDarcyFlow(5,dim1d);
-        //TPZDarcyFlow *matDarcyBigFract= new TPZDarcyFlow(6,dim1d);
-        //TPZDarcyFlow *matDarcySmallVug= new TPZDarcyFlow(7,dim2d);
-        TPZDarcyFlow *matDarcySmallVug= new TPZDarcyFlow(6,dim2d);
-        //TPZDarcyFlow *matDarcyBigVug= new TPZDarcyFlow(8,dim2d);
-    
-        matDarcy->SetConstantPermeability(0.01);
-        matDarcySmallVug->SetConstantPermeability(1e9);
-        //matDarcyBigVug->SetConstantPermeability(1.0e9);
-//        matDarcySmallFract->SetConstantPermeability(1e9);
-        //matDarcyBigFract->SetConstantPermeability(1.0e9);
-    int x, y;
-
-//    // Definir una función de permeabilidad como una lambda
-//    PermeabilityFunctionType perm_function = [](const TPZVec<REAL>& coord) -> STATE {
-//        if (coord[0]>100 and coord[1]>100){
-//            return 1000;
-//        }
-//        else{
-//            return 1;
-//
-//        };
-//    };
-    PermeabilityFunctionType perm_function = [](const TPZVec<REAL>& coord) -> STATE {
-        REAL x = coord[0];
-        REAL y = coord[1];
-        REAL arg = 2 * M_PI * x + 2 * M_PI * y;
-        REAL cos_arg = cos(arg);
-        REAL exp_term = exp(2.3 * cos_arg);
-        
-        return exp_term;
-    };
-//        // Ejemplo: Permeabilidad depende de x (coord[0])
-//        return coord[0] * 1e-3;
-//
-//
-    //matDarcy->SetPermeabilityFunction(perm_function);
-    //Conseguir permeabilidade em um ponto da malha coord(x,y);
-    
-    TPZVec<REAL> coord(2);
-    coord[0]=90.5;
-    coord[1]=650;
-    auto Perm=matDarcy->GetPermeability(coord);
-    std::cout<<Perm<<std::endl;
-    //Conseguir permeabilidade em um ponto da malha coord(x,y);
-    cmesh->InsertMaterialObject(matDarcy);
-        int bc_id=2;
-        int bc_typeN = 1;
-        int bc_typeD = 0;
-        TPZFMatrix<STATE> val1(1,1,0.0);
-        TPZVec<STATE> val2(1,0.0);
-        
-        int bcinletId = 2;
-        int bcOutletId = 3;
-        int bcNoFlux = 4;
-        TPZBndCond * face2 = matDarcy->CreateBC(matDarcy,bcNoFlux,bc_typeN,val1,val2);
-        cmesh->InsertMaterialObject(face2);
-        
-        val2[0]=100; // Valor a ser impuesto como presión en la entrada
-        TPZBndCond * face = matDarcy->CreateBC(matDarcy,bcinletId,bc_typeD,val1,val2);
-        cmesh->InsertMaterialObject(face);
-        
-        val2[0]=10; // Valor a ser impuesto como presión en la salida
-        TPZBndCond * face1 = matDarcy->CreateBC(matDarcy,bcOutletId,bc_typeD,val1,val2);
-        cmesh->InsertMaterialObject(face1);
-        //cmesh->InsertMaterialObject(matDarcySmallFract);
-        //cmesh->InsertMaterialObject(matDarcyBigFract);
-        cmesh->InsertMaterialObject(matDarcySmallVug);
-        //cmesh->InsertMaterialObject(matDarcyBigVug);
-       
-        cmesh->AutoBuild();
-        //Esto hace que el espacio de aproxiación sea H1
-        cmesh->ApproxSpace().SetAllCreateFunctionsContinuous();
-        
-        //Inicializa el tamaño del vector solución
-        cmesh->ExpandSolution();
-        
       
-        //CreateAnalisys
-        TPZLinearAnalysis *Analisys = new TPZLinearAnalysis(cmesh);
-        bool mustOptimizeBandwidth = false;
-       
-        //Carga la solución a la malla computacional
-        Analisys->LoadSolution();
-        
-       // Selecciona el método numérico para resolver el problema algebraico
-        TPZStepSolver<STATE> step;
-        
-    //    TPZSSpStructMatrix<STATE> matrix(cmesh);
-        step.SetDirect(ELDLt);
-      
-    //    Analisys->SetStructuralMatrix(matrix);
-        
-
-        Analisys->SetSolver(step);
-        
-        //Ensamblaje de la matriz de rigidez y vector de carga
-        Analisys->Assemble();
-
-        //Resolución del sistema algebraico
-        Analisys->Solve();
-
-        //Definición de variables escalares y vectoriales a posprocesar
-        TPZStack<std::string,10> scalnames, vecnames;
-        vecnames.Push("Flux");
-        scalnames.Push("Pressure");
-        
-        //Configuración del posprocesamiento
-        int ref =0; // Permite refinar la malla con la solucion obtenida
-        std::string file_reservoir("Darcy_H1.vtk");
-        Analisys->DefineGraphMesh(dim2d,scalnames,vecnames,file_reservoir);
-        //Posprocesamiento
-        Analisys->PostProcess(ref, dim2d);
-     
-        return 0;
 }
-
+void findElDim(TPZStack<TPZGeoElSide> &allneigh, int dim, TPZStack<TPZGeoElSide> &allneighdim){
+    int nels = allneigh.size();
+    for (int iel =0; iel<nels; iel++) {
+        if (allneigh[iel].Element()->Dimension()==dim) {
+            allneighdim.push_back(allneigh[iel]);
+        }
+    }
+}
 
     //devuelve una malla L2
 
 int main (){
-    //main2DFracVug();
-    //mainDarcy3D();
-    //mainMixed();
-    //mainMixedCT();
+    main2DFracVug();
+
     return 0;
 }

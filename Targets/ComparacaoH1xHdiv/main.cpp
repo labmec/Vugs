@@ -52,15 +52,10 @@ TPZGeoMesh* generateGMeshWithPhysTagVec(std::string& filename, TPZManVector<std:
 void findElDim(TPZStack<TPZGeoElSide> &allneigh, int dim, TPZStack<TPZGeoElSide> &allneighdim);
 
 
-int main3D();
-int main2D();
+
 int main2DFracVug();
 int mainDarcy3D ();
 
-//int main(){
-//
-//    return mainDarcy3D();
-//}
 
 
 TPZGeoMesh* generateGMeshWithPhysTagVec(std::string& filename, TPZManVector<std::map<std::string,int>,4>& dim_name_and_physical_tagFine){

@@ -35,8 +35,7 @@
 #include <set>
 #include "TPZAnalyticSolution.h"
 #include "TPZMultiphysicsCompMesh.h"
-#include "TSFMixedDarcy.h"
-#include "TPZHDivApproxCreator.h"
+
 //hola
 int mainDarcy2d();
 int mainDarcy3D();
@@ -133,6 +132,8 @@ int main2DFracVug(){
       val2[0]=10; // Valor a ser impuesto como presión en la salida
       TPZBndCond * face1 = matDarcy->CreateBC(matDarcy,bcOutletId,bc_typeD,val1,val2);
       cmesh->InsertMaterialObject(face1);
+      cmesh->InsertMaterialObject(matDarcySmallVug);
+
 
 //      cmesh->InsertMaterialObject(matDarcySmallVug);
 //      for (int p=100; p<190; p++) {
@@ -186,7 +187,6 @@ int main2DFracVug(){
    
       return 0;
 }
-
 
 
 int main (){

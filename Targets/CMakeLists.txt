@@ -2,6 +2,15 @@
 
 
 
-add_executable(VugsMain main.cpp)
-target_link_libraries(VugsMain PRIVATE NeoPZ::pz)
+
+
+
+
+add_subdirectory(ComparacaoH1xHdiv)
+add_subdirectory(ContornosVugs)
+add_subdirectory(SimulacaoPconstH1)
+add_subdirectory(SimulacaoPconstHDIV)
+add_subdirectory(FormaResidual)
+
+
 

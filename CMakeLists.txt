@@ -11,10 +11,6 @@ find_package(NeoPZ REQUIRED HINTS ${CMAKE_SOURCE_DIR}/../neopz_install/ ${CMAKE_
 
 add_subdirectory(Targets)
 
-#add_subdirectory(TestNeoPz)
 
-#add_subdirectory(TestOpenCV)
-#add_subdirectory(TestBinaryImage)
-#add_subdirectory(RAW3dVTK)
 
 

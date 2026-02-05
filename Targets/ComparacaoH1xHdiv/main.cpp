@@ -227,151 +227,7 @@ int main2DFracVug(){
      
         return 0;
 }
-//TPZ MixedDarcy Flow
-int mainMixed(){
-    
-    //
-    TPZGeoMesh *gmesh = new TPZGeoMesh;
-    TPZManVector<std::map<std::string,int>,4> dim_name_and_physical_tagCoarse(4);
-    dim_name_and_physical_tagCoarse[2]["k11"] = 1;
-    dim_name_and_physical_tagCoarse[1]["inlet"] = 2;
-    dim_name_and_physical_tagCoarse[1]["outlet"] = 3;
-    dim_name_and_physical_tagCoarse[1]["noflux"] = 4;
-    
 
-    
-    //std::string filename="/Users/victorvillegassalabarria/python-test/testskel4.msh";
-    //std::string filename="/Users/victorvillegassalabarria/python-test/testskel30sp.msh";
-    std::string filename="/Users/victorvillegassalabarria/Downloads/MallaTriangles.msh";
-
-    gmesh = generateGMeshWithPhysTagVec(filename, dim_name_and_physical_tagCoarse);
-   
-    std::ofstream file3("TestGeoMesh2Dskel.vtk");
-    TPZVTKGeoMesh::PrintGMeshVTK(gmesh, file3);
-    //Create CompMesh
-    TPZCompMesh *cmesh_flux =  HdivMesh(gmesh);
-    //TPZCompMesh *cmesh =  Pressuremesh(gmesh,1);
-    TPZCompMesh *cmesh =  Pressuremesh(gmesh,0);
-  //  TPZCompMesh *cmesh_paverage =  Pressuremesh(gmesh,0);
-   // TPZCompMesh *cmesh_faverage =  Pressuremesh(gmesh,0);
-
-    
-    //MULTIFISICA
-    TPZMultiphysicsCompMesh *cmesh_mult= new TPZMultiphysicsCompMesh(gmesh);
-    TPZVec<TPZCompMesh *> meshvec(2);
-    meshvec[0]= cmesh_flux;
-    meshvec[1]= cmesh;
-    //meshvec[2]= cmesh_paverage;
-    //meshvec[3]= cmesh_faverage;
-   //Config
-    //cmesh_mult->BuildMultiphysicsSpace(meshvec);
-    
-  
-      //Create Materials
-      int matId=1;
-      int dim2d = 2;
-      int matIdsmallFract=2;
-      int matIBigFract=2;
-      int dim1d=1;
-  
-      TPZMixedDarcyFlow *matDarcy = new TPZMixedDarcyFlow(matId, dim2d);
- 
-  
-  //    matDarcy->SetConstantPermeability(1);
-
-  
-      cmesh_mult->InsertMaterialObject(matDarcy);
-      int bc_id=2;
-      int bc_typeN = 1;
-      int bc_typeD = 0;
-      TPZFMatrix<STATE> val1(1,1,0.0);
-      TPZVec<STATE> val2(1,0.0);
-      
-      int bcinletId = 2;
-      int bcOutletId = 3;
-      int bcNoFlux = 4;
-      TPZBndCond * face2 = matDarcy->CreateBC(matDarcy,bcNoFlux,bc_typeN,val1,val2);
-      cmesh_mult->InsertMaterialObject(face2);
-      
-      val2[0]=100; // Valor a ser impuesto como presión en la entrada
-      TPZBndCond * face = matDarcy->CreateBC(matDarcy,bcinletId,bc_typeD,val1,val2);
-      cmesh_mult->InsertMaterialObject(face);
-      
-      val2[0]=10; // Valor a ser impuesto como presión en la salida
-      TPZBndCond * face1 = matDarcy->CreateBC(matDarcy,bcOutletId,bc_typeD,val1,val2);
-      cmesh_mult->InsertMaterialObject(face1);
- 
-     
-    //  cmesh_mult->AutoBuild();
-      //Esto hace que el espacio de aproxiación sea H1
-    //cmesh_mult->ApproxSpace().SetAllCreateFunctionsContinuous();
-    cmesh_mult->ApproxSpace().SetAllCreateFunctionsContinuous();
-
-      //Inicializa el tamaño del vector solución
-      cmesh_mult->ExpandSolution();
-    cmesh_mult->ApproxSpace().Style()= TPZCreateApproximationSpace::EMultiphysics;
-    cmesh_mult->BuildMultiphysicsSpace(meshvec);
-    //TPZManVector<int, 2> active_approx_spaces(2, 1);
-    //cmesh_mult->BuildMultiphysicsSpace(active_approx_spaces, meshvec);
-    cmesh_mult->InitializeBlock();
-    std::cout<<cmesh_mult->Element(1)<<std::endl;
-    
-    bool mustOp = false;
-
-      //CreateAnalisys
-    TPZLinearAnalysis *Analisys = new TPZLinearAnalysis(cmesh_mult);
-    
-    //new TPZLinearAnalysis(cmesh_mult);
-    
-
-      //TPZAnalysis *Analisys = new TPZAnalysis(cmesh_mult,true);
-//      bool mustOptimizeBandwidth = false;
-     
-      //Carga la solución a la malla computacional
-      Analisys->LoadSolution();
-      
-     // Selecciona el método numérico para resolver el problema algebraico
-      TPZStepSolver<STATE> step;
-      
-  //    TPZSSpStructMatrix<STATE> matrix(cmesh);
-      step.SetDirect(ELDLt);
-    
-  //    Analisys->SetStructuralMatrix(matrix);
-    
-      Analisys->SetSolver(step);
-      
-      //Ensamblaje de la matriz de rigidez y vector de carga
-      Analisys->Assemble();
-
-      //Resolución del sistema algebraico
-      //Analisys->Solve();
-    TPZElementMatrixT<double> mat, vec;
-    std::ofstream file("matrixel.txt");
-    int nels =cmesh_mult->NElements();
-    for (int i=1;i<nels;i++){
-        auto cel=cmesh_mult->Element(i);
-        auto gel=cel->Reference();
-        if(gel->Dimension()==2){
-            cel->CalcStiff(mat,vec);
-            mat.fMat.Print(file);
-        }
-    }
-      //Definición de variables escalares y vectoriales a posprocesar
-      TPZStack<std::string,10> scalnames, vecnames;
-      vecnames.Push("Flux");
-      scalnames.Push("Pressure");
-      
-      //Configuración del posprocesamiento
-      int ref =0; // Permite refinar la malla con la solucion obtenida
-      std::string file_reservoir("SolVictorCTmesh.vtk");
-      Analisys->DefineGraphMesh(dim2d,scalnames,vecnames,file_reservoir);
-      //Posprocesamiento
-      Analisys->PostProcess(ref, dim2d);
-   
-      return 0;
-    //
-   
-}
 int mainMixedCT(){
     
     //
@@ -594,7 +450,9 @@ int mainMixedCT(){
     //
     
     int lagmultilevel = 1;
-    TPZManVector<TPZCompMesh *, 7> meshvec(hdivCreator.NumMeshes());
+    //TPZManVector<TPZCompMesh *, 7> meshvec(hdivCreator.NumMeshes());
+    TPZManVector<TPZCompMesh *, 7> meshvec(2);
+
     hdivCreator.CreateAtomicMeshes(meshvec, lagmultilevel); // This method increments the lagmultilevel
     TPZMultiphysicsCompMesh *cmesh = nullptr;
 

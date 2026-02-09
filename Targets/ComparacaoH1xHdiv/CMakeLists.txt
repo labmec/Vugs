@@ -2,6 +2,6 @@
 
 
 
-add_executable(ComparacaoH1xHDiv main.cpp)
-target_link_libraries(ComparacaoH1xHDiv PRIVATE NeoPZ::pz)
+add_executable(Comparacao main.cpp)
+target_link_libraries(Comparacao PRIVATE NeoPZ::pz)
 

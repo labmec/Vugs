@@ -51,15 +51,9 @@ TPZGeoMesh* generateGMeshWithPhysTagVec(std::string& filename, TPZManVector<std:
 void findElDim(TPZStack<TPZGeoElSide> &allneigh, int dim, TPZStack<TPZGeoElSide> &allneighdim);
 
 
-int main3D();
-int main2D();
-int main2DFracVug();
-int mainDarcy3D ();
 
-//int main(){
-//
-//    return mainDarcy3D();
-//}
+int H1Vugs();
+
 
 
 TPZGeoMesh* generateGMeshWithPhysTagVec(std::string& filename, TPZManVector<std::map<std::string,int>,4>& dim_name_and_physical_tagFine){
@@ -76,7 +70,7 @@ TPZGeoMesh* generateGMeshWithPhysTagVec(std::string& filename, TPZManVector<std:
     return gmeshFine;
 }
 
-int main2DFracVug(){
+int H1Vugs(){
       TPZGeoMesh *gmesh = new TPZGeoMesh;
       TPZManVector<std::map<std::string,int>,4> dim_name_and_physical_tagCoarse(4);
       dim_name_and_physical_tagCoarse[2]["k11"] = 1;
@@ -90,7 +84,112 @@ int main2DFracVug(){
       std::string filename="/Users/victorvillegassalabarria/python-test/testskelSLICE77SP.msh";
 
       gmesh = generateGMeshWithPhysTagVec(filename, dim_name_and_physical_tagCoarse);
-     
+        int ncreated = 0;
+        int nels = gmesh->NElements();
+
+
+        for (int iel = 0; iel< nels; iel++) {
+            TPZGeoEl *gel = gmesh->Element(iel);
+            if (!gel){
+                continue;
+            }
+            if (gel->Dimension() != 2) {
+                continue;
+            }
+            int nsides= gel->NSides();
+            int ncorners= gel->NCornerNodes();
+            int firstside= nsides-ncorners-1;
+
+
+            for (int iside = firstside; iside<nsides; iside++) {
+                TPZGeoElSide gelside(gel, iside);
+                int matid = gelside.Element()->MaterialId();
+                TPZStack<TPZGeoElSide> allneigh;
+                gelside.AllNeighbours(allneigh);
+    //            std::cout<<allneigh[0].Element()<<std::endl;
+                int nneighs = allneigh.size();
+                //verify Dimension
+                int verify =0;
+
+                for (int ineigh=0; ineigh<nneighs; ineigh++) {
+                    TPZGeoEl *gelneigh = allneigh[ineigh].Element();
+                    int dimen = gelneigh->Dimension();
+
+                    if (dimen == 1) {
+                        verify = 1;
+                    }
+                }
+                if(verify == 1){
+                    continue;
+                }
+
+                for (int ineigh=0; ineigh<nneighs; ineigh++) {
+                    TPZGeoEl *gelneigh = allneigh[ineigh].Element();
+                    int matNeigh = gelneigh->MaterialId();
+                    if (matNeigh != matid && (gel->Dimension() == gelneigh->Dimension()) ) {
+                       gelside.Element()->CreateBCGeoEl(iside, 100);
+                       ncreated++;
+                    }
+                }
+            }
+        }
+
+        std::cout<< "se crearon: " << ncreated << " elements"<<std::endl;
+
+        gmesh->BuildConnectivity();
+        int nels2 = gmesh->NElements();
+        TPZVec<int> verificador(nels2, 0);
+        // creador de contornos por ids
+        int mat=100;
+        for (int iel =nels-1; iel<nels2; iel++) {
+
+            TPZGeoEl * gel = gmesh->Element(iel);
+            if (gel->MaterialId() ==100) {
+                std::cout<<"ok "<<std::endl;
+            }
+            if (!gel) {
+                continue;
+            }
+            if (gel->Dimension() != 1) {
+                continue;
+            }
+            if (verificador[iel]==1) {
+                continue;
+            }
+            if (gel->MaterialId() != 100) {
+                continue;
+            }
+            int side = 1;
+
+            TPZGeoElSide gelside(gel, side);
+            TPZStack<TPZGeoElSide> allneigh;
+            gelside.AllNeighbours(allneigh);
+            TPZStack<TPZGeoElSide> allneighdim;
+            findElDim(allneigh, 1, allneighdim);
+            int ntest = allneighdim.size();
+            TPZGeoElSide gelneigh = allneighdim[0];
+            gel->SetMaterialId(mat);
+            while (gel != gelneigh.Element()) {
+                TPZStack<TPZGeoElSide> allneigh;
+                int sidetest = gelneigh.Side();
+                if (sidetest==0) {
+                    gelneigh.SetSide(1);
+                }
+                else{
+                    gelneigh.SetSide(0);
+                }
+                gelneigh.AllNeighbours(allneigh);
+                TPZStack<TPZGeoElSide> allneighdim;
+                findElDim(allneigh, 1, allneighdim);
+                int indexneig = gelneigh.Element()->Index();
+                verificador[indexneig] =1;
+                gelneigh.Element()->SetMaterialId(mat);
+                gelneigh =allneighdim[0];
+            }
+            mat++;
+            int ok=0;
+        }
+    
       std::ofstream file3("TestGeoMesh2Dskel.vtk");
       TPZVTKGeoMesh::PrintGMeshVTK(gmesh, file3);
       //Create CompMesh
@@ -108,7 +207,7 @@ int main2DFracVug(){
 
   
       matDarcy->SetConstantPermeability(0.01);
-      matDarcySmallVug->SetConstantPermeability(1e9);
+      matDarcySmallVug->SetConstantPermeability(1.0e6);
 
   
       cmesh->InsertMaterialObject(matDarcy);
@@ -132,16 +231,59 @@ int main2DFracVug(){
       val2[0]=10; // Valor a ser impuesto como presión en la salida
       TPZBndCond * face1 = matDarcy->CreateBC(matDarcy,bcOutletId,bc_typeD,val1,val2);
       cmesh->InsertMaterialObject(face1);
-      cmesh->InsertMaterialObject(matDarcySmallVug);
+ 
 
 
-//      cmesh->InsertMaterialObject(matDarcySmallVug);
-//      for (int p=100; p<190; p++) {
-//          val2[0]=50;
-//          TPZBndCond *contorno=matDarcy->CreateBC(matDarcy,p,bc_typeD,val1,val2);
-//          cmesh->InsertMaterialObject(contorno);
-//      }
+      
       cmesh->AutoBuild();
+    std::cout << "\n===== ASIGNANDO PRIMER CONNECT POR GRUPO =====\n";
+
+    std::map<int, int64_t> primer_connect_grupo;  // matid → primer connect
+
+    // PASO 1: Identificar PRIMER elemento válido de cada grupo
+    for (int64_t el = 0; el < cmesh->NElements(); el++) {
+        TPZCompEl *cel = cmesh->Element(el);
+        if (!cel) continue;
+        
+        TPZGeoEl *gel = cel->Reference();
+        if (!gel) continue;
+        
+        int matid = gel->MaterialId();
+        if (matid >= 100 && matid <= 120) {
+            int64_t primer_conn = cel->ConnectIndex(0);  // Primer connect natural
+            if (primer_connect_grupo.find(matid) == primer_connect_grupo.end()) {
+                primer_connect_grupo[matid] = primer_conn;
+                std::cout << "Grupo matid=" << matid << " → connect=" << primer_conn << std::endl;
+            }
+        }
+    }
+
+    // PASO 2: Asignar a TODOS los elementos de cada grupo su primer connect
+    for (int64_t el = 0; el < cmesh->NElements(); el++) {
+        TPZCompEl *cel = cmesh->Element(el);
+        if (!cel) continue;
+        
+        TPZGeoEl *gel = cel->Reference();
+        if (!gel) continue;
+        
+        int matid = gel->MaterialId();
+        if (matid >= 100 && matid <= 120) {
+            int64_t connect_unico = primer_connect_grupo[matid];
+            
+            // TODOS los connects del elemento apuntan al MISMO connect único
+            for(int loc = 0; loc < cel->NConnects(); loc++) {
+                cel->SetConnectIndex(loc, connect_unico);
+            }
+            std::cout << "Elemento " << el << " (matid=" << matid
+                      << ") → todos connects = " << connect_unico << std::endl;
+        }
+    }
+
+    //cmesh->ComputeNodElCon();  // Reconstruye conectividad
+    cmesh->CleanUpUnconnectedNodes();
+
+
+
       //Esto hace que el espacio de aproxiación sea H1
       cmesh->ApproxSpace().SetAllCreateFunctionsContinuous();
       
@@ -190,6 +332,14 @@ int main2DFracVug(){
 
 
 int main (){
-    main2DFracVug();
+    H1Vugs();
     return 0;
+}
+void findElDim(TPZStack<TPZGeoElSide> &allneigh, int dim, TPZStack<TPZGeoElSide> &allneighdim){
+    int nels = allneigh.size();
+    for (int iel =0; iel<nels; iel++) {
+        if (allneigh[iel].Element()->Dimension()==dim) {
+            allneighdim.push_back(allneigh[iel]);
+        }
+    }
 }

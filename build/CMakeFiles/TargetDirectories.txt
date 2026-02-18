@@ -1,0 +1,13 @@
+/home/itopo/Stokes-Darcy_Research/Vugs/build/CMakeFiles/edit_cache.dir
+/home/itopo/Stokes-Darcy_Research/Vugs/build/CMakeFiles/rebuild_cache.dir
+/home/itopo/Stokes-Darcy_Research/Vugs/build/Targets/CMakeFiles/edit_cache.dir
+/home/itopo/Stokes-Darcy_Research/Vugs/build/Targets/CMakeFiles/rebuild_cache.dir
+/home/itopo/Stokes-Darcy_Research/Vugs/build/Targets/ComparacaoH1xHdiv/CMakeFiles/Comparacao.dir
+/home/itopo/Stokes-Darcy_Research/Vugs/build/Targets/ComparacaoH1xHdiv/CMakeFiles/edit_cache.dir
+/home/itopo/Stokes-Darcy_Research/Vugs/build/Targets/ComparacaoH1xHdiv/CMakeFiles/rebuild_cache.dir
+/home/itopo/Stokes-Darcy_Research/Vugs/build/Targets/ContornosVugs/CMakeFiles/Contornos.dir
+/home/itopo/Stokes-Darcy_Research/Vugs/build/Targets/ContornosVugs/CMakeFiles/edit_cache.dir
+/home/itopo/Stokes-Darcy_Research/Vugs/build/Targets/ContornosVugs/CMakeFiles/rebuild_cache.dir
+/home/itopo/Stokes-Darcy_Research/Vugs/build/Targets/SimulacaoPconstH1/CMakeFiles/TestH1.dir
+/home/itopo/Stokes-Darcy_Research/Vugs/build/Targets/SimulacaoPconstH1/CMakeFiles/edit_cache.dir
+/home/itopo/Stokes-Darcy_Research/Vugs/build/Targets/SimulacaoPconstH1/CMakeFiles/rebuild_cache.dir

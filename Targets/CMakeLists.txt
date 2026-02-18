@@ -10,8 +10,8 @@ find_package(NeoPZ REQUIRED HINTS ${CMAKE_SOURCE_DIR}/../neopz_install/ ${CMAKE_
 add_subdirectory(ComparacaoH1xHdiv)
 add_subdirectory(ContornosVugs)
 add_subdirectory(SimulacaoPconstH1)
-add_subdirectory(SimulacaoPconstHDIV)
-add_subdirectory(FormaResidual)
+#add_subdirectory(SimulacaoPconstHDIV)
+#add_subdirectory(FormaResidual)
 
 
 

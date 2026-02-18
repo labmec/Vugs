@@ -84,7 +84,7 @@ int main2DFracVug(){
         int ncreated = 0;
         int nels = gmesh->NElements();
 
-
+        // CREATION OF BOUNDARY ELEMENTS (MATID=100) IN THE INTERFACE BETWEEN DIFFERENT MATERIALS, Vugs and Porous Matrix
         for (int iel = 0; iel< nels; iel++) {
             TPZGeoEl *gel = gmesh->Element(iel);
             if (!gel){
@@ -134,8 +134,8 @@ int main2DFracVug(){
         std::cout<< "se crearon: " << ncreated << " elements"<<std::endl;
 
 //    //gmesh->BuildConnectivity();
-    int nels2 = gmesh->NElements();
-    TPZVec<int64_t> els_cont1d(nels2,-1);
+    int nels2 = gmesh->NElements(); // number of elements after creating BCs
+    TPZVec<int64_t> els_cont1d(nels2,-1); // vector to store the mat ids of the 1d elements (contours), the rest will be -1 
     std::cout<<nels2<<std::endl;
     int nels1d=0;
     int nels2d=0;
@@ -157,9 +157,11 @@ int main2DFracVug(){
     //elements_contorno.Resize(const int64_t newsize)
 
     TPZVec<int> verificador(nels2, 0);
-    // creador de contornos por ids
     int mat=100;
-    for (int iel =nels-1; iel<nels2; iel++) {
+
+    // Iterates through newly created 1D boundary elements (those with material ID 100) 
+    // and groups connected elements together, assigning each contiguous group a unique material ID
+    for (int iel =nels-1; iel<nels2; iel++) { 
 
         TPZGeoEl * gel = gmesh->Element(iel);
         if (gel->MaterialId() ==100) {
@@ -182,14 +184,14 @@ int main2DFracVug(){
         TPZGeoElSide gelside(gel, side);
 
         TPZStack<TPZGeoElSide> allneigh;
-        gelside.AllNeighbours(allneigh);
+        gelside.AllNeighbours(allneigh); // Find all neighbors of the current side and store them in allneigh
         TPZStack<TPZGeoElSide> allneighdim;
-        findElDim(allneigh, 1, allneighdim);
+        findElDim(allneigh, 1, allneighdim); // Only 1D neighbors, which are Boundary elements, are stored in allneighdim 
         int ntest = allneighdim.size();
         TPZGeoElSide gelneigh = allneighdim[0];
         gel->SetMaterialId(mat);
-        els_cont1d[iel]=mat;
-        while (gel != gelneigh.Element()) {
+        els_cont1d[iel]=mat; 
+        while (gel != gelneigh.Element()) { //loop over connected elements, until the loop returns to the original element, completing the contour group.
             TPZStack<TPZGeoElSide> allneigh;
             int sidetest = gelneigh.Side();
             if (sidetest==0) {
@@ -204,7 +206,7 @@ int main2DFracVug(){
             int indexneig = gelneigh.Element()->Index();
             verificador[indexneig] =1;
             gelneigh.Element()->SetMaterialId(mat);
-            els_cont1d[indexneig]=mat;
+            els_cont1d[indexneig]=mat; 
             gelneigh =allneighdim[0];
             
         }
@@ -215,8 +217,10 @@ int main2DFracVug(){
     if(nels2==els_cont1d.size()){
         std::cout<<"Ok"<<std::endl;
     }
-    TPZVec<int64_t> AllVugsEls2d;
-    for(int ind=0;ind<nels2;ind++){
+    TPZVec<int64_t> AllVugsEls2d; 
+
+    // GROUP ALL 2D ELEMENTS OF VUGS (MATID=6) IN AllVugsEls2d
+    for(int ind=0;ind<nels2;ind++){ 
         TPZGeoEl *gEl=gmesh->Element(ind);
         if (!gEl) {
             continue;
@@ -227,34 +231,36 @@ int main2DFracVug(){
         if(gEl->MaterialId()!=6){
             continue;
         }
-        AllVugsEls2d.push_back(ind);
+        AllVugsEls2d.push_back(ind); // store the index of the element if it has matid=6 (Vugs)
     }
     std::cout<<"All vugs 2D size: "<<AllVugsEls2d.size()<<std::endl;
     int ElVugs_identified=0;
 
-    for(int ind=0;ind<AllVugsEls2d.size();ind++){
+    // Identifies 2D vug elements (void/cavity elements) that lie on boundaries by detecting which 
+    // ones have 1D neighbor elements, then assigns them material IDs (+500) that correspond to their associated boundary contour groups.
+    for(int ind=0;ind<AllVugsEls2d.size();ind++){ // loop over all 2D vug elements
         TPZGeoEl *gEl=gmesh->Element(AllVugsEls2d[ind]);
         if (!gEl) {
             continue;
         }
-        if (els_cont1d[ind]!=-1) {  // Fix: usa ind correcto
+        if (els_cont1d[ind]!=-1) {  // els_cont1d[AllVugsEls2d[ind]
             continue;
         }
-        int sides=gEl->NSides();
-        for(int side = 3; side < sides; side++) {  // side=4 (no 3)
+        int sides=gEl->NSides();  // return the number of connectivities of the element, which is the number of sides
+        for(int side = 3; side < sides; side++) {  // triangular elements, skips the corners side.
             TPZGeoElSide gelside(gEl, side);
             TPZStack<TPZGeoElSide> allneigh;
             gelside.AllNeighbours(allneigh);
             TPZStack<TPZGeoElSide> allneighdim, allneighdim2D;
-            findElDim(allneigh, 1, allneighdim);
-            findElDim(allneigh, 2, allneighdim2D);
+            findElDim(allneigh, 1, allneighdim); // Find 1D neighbors of the current side and store them in allneighdim
+            findElDim(allneigh, 2, allneighdim2D); // Find 2D neighbors and store them in allneighdim2D
 
-            if(allneighdim.NElements()>0){
-                TPZGeoElSide gelneigh = allneighdim[0];
+            if(allneighdim.NElements()>0){ // it indicates this side (edge) touches a 1D boundary element.
+                TPZGeoElSide gelneigh = allneighdim[0]; // Get the first 1D neighbor (should be only one since it's a boundary)
                 auto matid1=gelneigh.Element()->MaterialId();
                 std::cout << "  Lado " << side << " → Elemento " << AllVugsEls2d[ind]
                           << " (matID=" << matid1 << ")" << std::endl;
-                gEl->SetMaterialId(500+matid1);
+                gEl->SetMaterialId(500+matid1); // Assign a new material ID to the 2D vug element based on the material ID of the neighboring 1D boundary element.
                 els_cont1d[AllVugsEls2d[ind]] = 500+matid1;  // Fix: índice real
                 ElVugs_identified++;
                 break;  // Solo un contorno por elemento
@@ -262,35 +268,37 @@ int main2DFracVug(){
         }
     }
 
+    // Propagates boundary contour assignments from already-identified 2D vug elements 
+    // to their unassigned neighbors through an iterative flood-fill process, ensuring 
+    // all connected vug elements within the same cavity receive matching material IDs.
     bool expanded = true;
     while(expanded) {
         expanded = false;
-        for(int ind=0; ind<AllVugsEls2d.size(); ind++) {
-            int64_t elIdx = AllVugsEls2d[ind];
-            if(els_cont1d[elIdx] != -1) continue;  // Ya marcado
+        for(int ind=0; ind<AllVugsEls2d.size(); ind++) { 
+            int64_t elIdx = AllVugsEls2d[ind]; 
+            if(els_cont1d[elIdx] != -1) continue; // only process unassigned 2D vug elements
             
-            TPZGeoEl *gEl = gmesh->Element(elIdx);
+            TPZGeoEl *gEl = gmesh->Element(elIdx); 
             int sides = gEl->NSides();
-            for(int side=3; side<sides; side++) {
-                TPZGeoElSide gelside(gEl, side);
+            for(int side=3; side<sides; side++) { 
+                TPZGeoElSide gelside(gEl, side); 
                 TPZStack<TPZGeoElSide> allneigh;
-                gelside.AllNeighbours(allneigh);
+                gelside.AllNeighbours(allneigh); 
                 TPZStack<TPZGeoElSide> neigh2D;
-                findElDim(allneigh, 2, neigh2D);
+                findElDim(allneigh, 2, neigh2D); 
                 
-                for(int n=0; n<neigh2D.NElements(); n++) {
-                    int64_t nidx = neigh2D[n].Element()->Index();
-                    if(els_cont1d[nidx] > 500) {  // Tiene vecino MARCADO
-                        els_cont1d[elIdx] = els_cont1d[nidx];  // Hereda
-                        gEl->SetMaterialId(els_cont1d[elIdx]);
+                for(int n=0; n<neigh2D.NElements(); n++) { 
+                    int64_t nidx = neigh2D[n].Element()->Index(); 
+                    if(els_cont1d[nidx] > 500) { 
+                        els_cont1d[elIdx] = els_cont1d[nidx];  
+                        gEl->SetMaterialId(els_cont1d[elIdx]); 
                         ElVugs_identified++;
                         expanded = true;
-                        break;
+                        break; // assign the same contour ID as the neighbor and mark as expanded
                     }
                 }
-                if(expanded) break;
-            }
-                if(expanded) break;
+                if(expanded) break; // If the element was assigned a contour ID, do not process other sides
+            if(expanded) break;
         }
     }
 

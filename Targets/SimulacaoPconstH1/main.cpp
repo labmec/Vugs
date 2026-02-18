@@ -79,11 +79,22 @@ TPZGeoMesh* generateGMeshWithPhysTagVec(std::string& filename, TPZManVector<std:
     return gmeshFine;
 }
 
-int CreateBoundaryElements(TPZGeoMesh *gmesh, TPZVec<int64_t> &els_cont1d){
+int H1Vugs(){
+      TPZGeoMesh *gmesh = new TPZGeoMesh;
+      TPZManVector<std::map<std::string,int>,4> dim_name_and_physical_tagCoarse(4);
+      dim_name_and_physical_tagCoarse[2]["k11"] = 1;
 
-    int nels = gmesh->NElements();
-    int nElVugBound = 0;
-    int nVug = 0; 
+      dim_name_and_physical_tagCoarse[2]["Vugs"] = 6;
+      dim_name_and_physical_tagCoarse[1]["inlet"] = 2;
+      dim_name_and_physical_tagCoarse[1]["outlet"] = 3;
+      dim_name_and_physical_tagCoarse[1]["noflux"] = 4;
+
+
+      std::string filename="/home/itopo/Stokes-Darcy_Research/Vugs/testskelSLICE77SP.msh";
+
+      gmesh = generateGMeshWithPhysTagVec(filename, dim_name_and_physical_tagCoarse);
+        int ncreated = 0;
+        int nels = gmesh->NElements();
 
     for (int iel = 0; iel< nels; iel++) {
         TPZGeoEl *gel = gmesh->Element(iel);
@@ -367,50 +378,89 @@ void H1Vugs(){
     //Create CompMesh
     TPZCompMesh *cmesh =  new TPZCompMesh(gmesh);
   
-    //Create Materials
-    int dim2d = 2;
-    int dim1d=1;
-    TPZDarcyFlow *matDarcy = new TPZDarcyFlow(EMatId, dim2d);
-    TPZDarcyFlow *matDarcySmallVug= new TPZDarcyFlow(EVugId,dim2d);
-
-    matDarcy->SetConstantPermeability(0.01);
-    matDarcySmallVug->SetConstantPermeability(1.0e6);
-    
-    cmesh->InsertMaterialObject(matDarcy);
-
-    //Create BCs
-    int bc_id=2;
-    int bc_typeN = 1;
-    int bc_typeD = 0;
-    TPZFMatrix<STATE> val1(1,1,0.0);
-    TPZVec<STATE> val2(1,0.0);
+      //Create Materials
+      int matId=1;
+      int dim2d = 2;
+      int matIdsmallFract=2;
+      int matIBigFract=2;
+      int dim1d=1;
   
-    TPZBndCond * face2 = matDarcy->CreateBC(matDarcy,EbcNoFlux,bc_typeN,val1,val2);
-    cmesh->InsertMaterialObject(face2);
-    
-    val2[0]=100; // Valor a ser impuesto como presión en la entrada
-    TPZBndCond * face = matDarcy->CreateBC(matDarcy,EbcInletId,bc_typeD,val1,val2);
-    cmesh->InsertMaterialObject(face);
-    
-    val2[0]=10; // Valor a ser impuesto como presión en la salida
-    TPZBndCond * face1 = matDarcy->CreateBC(matDarcy,EbcOutletId,bc_typeD,val1,val2);
-    cmesh->InsertMaterialObject(face1);
+      TPZDarcyFlow *matDarcy = new TPZDarcyFlow(matId, dim2d);
+      TPZDarcyFlow *matDarcySmallVug= new TPZDarcyFlow(6,dim2d);
 
-    val2[0]=1000;
-    //TODO Create comp elements of Vug Boundary
-    for(int iel = 0; iel < nVugs; iel++) {
-        int matid = EVugBcId + iel;
-        TPZBndCond *faceVug = matDarcySmallVug->CreateBC(matDarcySmallVug,matid,bc_typeD,val1,val2);
-        cmesh->InsertMaterialObject(faceVug);
+  
+      matDarcy->SetConstantPermeability(0.01);
+      matDarcySmallVug->SetConstantPermeability(1.0e6);
+
+  
+      cmesh->InsertMaterialObject(matDarcy);
+      int bc_id=2;
+      int bc_typeN = 1;
+      int bc_typeD = 0;
+      TPZFMatrix<STATE> val1(1,1,0.0);
+      TPZVec<STATE> val2(1,0.0);
+      
+      int bcinletId = 2;
+      int bcOutletId = 3;
+      int bcNoFlux = 4;
+  
+      TPZBndCond * face2 = matDarcy->CreateBC(matDarcy,bcNoFlux,bc_typeN,val1,val2);
+      cmesh->InsertMaterialObject(face2);
+      
+      val2[0]=100; // Valor a ser impuesto como presión en la entrada
+      TPZBndCond * face = matDarcy->CreateBC(matDarcy,bcinletId,bc_typeD,val1,val2);
+      cmesh->InsertMaterialObject(face);
+      
+      val2[0]=10; // Valor a ser impuesto como presión en la salida
+      TPZBndCond * face1 = matDarcy->CreateBC(matDarcy,bcOutletId,bc_typeD,val1,val2);
+      cmesh->InsertMaterialObject(face1);
+ 
+
+
+      
+      cmesh->AutoBuild();
+    std::cout << "\n===== ASIGNANDO PRIMER CONNECT POR GRUPO =====\n";
+
+    std::map<int, int64_t> primer_connect_grupo;  // matid → primer connect
+
+    // PASO 1: Identificar PRIMER elemento válido de cada grupo
+    for (int64_t el = 0; el < cmesh->NElements(); el++) {
+        TPZCompEl *cel = cmesh->Element(el);
+        if (!cel) continue;
+        
+        TPZGeoEl *gel = cel->Reference();
+        if (!gel) continue;
+        
+        int matid = gel->MaterialId();
+        if (matid >= 100 && matid <= 120) {
+            int64_t primer_conn = cel->ConnectIndex(0);  // Primer connect natural
+            if (primer_connect_grupo.find(matid) == primer_connect_grupo.end()) {
+                primer_connect_grupo[matid] = primer_conn;
+                std::cout << "Grupo matid=" << matid << " → connect=" << primer_conn << std::endl;
+            }
+        }
     }
 
-    cmesh->AutoBuild();
-
-    std::cout << "-----------------Assign unique connect to all vug elements-------------------\n";
-    // A "connect" represents a degree of freedom (DOF) or interpolation point where solution values are computed. 
-    // It contibutes in one place in the stiffness matrix
-
-    SetUniqueVugConnect(gmesh, cmesh);
+    // PASO 2: Asignar a TODOS los elementos de cada grupo su primer connect
+    for (int64_t el = 0; el < cmesh->NElements(); el++) {
+        TPZCompEl *cel = cmesh->Element(el);
+        if (!cel) continue;
+        
+        TPZGeoEl *gel = cel->Reference();
+        if (!gel) continue;
+        
+        int matid = gel->MaterialId();
+        if (matid >= 100 && matid <= 120) {
+            int64_t connect_unico = primer_connect_grupo[matid];
+            
+            // TODOS los connects del elemento apuntan al MISMO connect único
+            for(int loc = 0; loc < cel->NConnects(); loc++) {
+                cel->SetConnectIndex(loc, connect_unico);
+            }
+            std::cout << "Elemento " << el << " (matid=" << matid
+                      << ") → todos connects = " << connect_unico << std::endl;
+        }
+    }
 
     //cmesh->ComputeNodElCon();  // Reconstruye conectividad
     cmesh->CleanUpUnconnectedNodes();

@@ -1,0 +1,14 @@
+{
+	"backtraceGraph" : 
+	{
+		"commands" : [],
+		"files" : [],
+		"nodes" : []
+	},
+	"installers" : [],
+	"paths" : 
+	{
+		"build" : "Targets/ComparacaoH1xHdiv",
+		"source" : "Targets/ComparacaoH1xHdiv"
+	}
+}

@@ -1,0 +1,1 @@
+/usr/bin/g++ -g CMakeFiles/Contornos.dir/main.cpp.o -o Contornos  -Wl,-rpath,/home/itopo/Stokes-Darcy_Research/neopz_install/pz/lib /home/itopo/Stokes-Darcy_Research/neopz_install/pz/lib/libpz.so 

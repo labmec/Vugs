@@ -81,12 +81,11 @@ int H1Vugs(){
       dim_name_and_physical_tagCoarse[1]["noflux"] = 4;
 
 
-      std::string filename="/Users/victorvillegassalabarria/python-test/testskelSLICE77SP.msh";
+      std::string filename="/home/itopo/Stokes-Darcy_Research/Vugs/testskelSLICE77SP.msh";
 
       gmesh = generateGMeshWithPhysTagVec(filename, dim_name_and_physical_tagCoarse);
         int ncreated = 0;
         int nels = gmesh->NElements();
-
 
         for (int iel = 0; iel< nels; iel++) {
             TPZGeoEl *gel = gmesh->Element(iel);
@@ -237,10 +236,10 @@ int H1Vugs(){
       
       cmesh->AutoBuild();
     std::cout << "\n===== ASIGNANDO PRIMER CONNECT POR GRUPO =====\n";
+    // A "connect" represents a degree of freedom (DOF) or interpolation point where solution values are computed.
+    std::map<int, int64_t> primer_connect_grupo;  // {{matid, first_connect}, ...}
 
-    std::map<int, int64_t> primer_connect_grupo;  // matid → primer connect
-
-    // PASO 1: Identificar PRIMER elemento válido de cada grupo
+    // PASO 1: Identify the first connect index for each group (matid)
     for (int64_t el = 0; el < cmesh->NElements(); el++) {
         TPZCompEl *cel = cmesh->Element(el);
         if (!cel) continue;
@@ -249,16 +248,21 @@ int H1Vugs(){
         if (!gel) continue;
         
         int matid = gel->MaterialId();
-        if (matid >= 100 && matid <= 120) {
-            int64_t primer_conn = cel->ConnectIndex(0);  // Primer connect natural
-            if (primer_connect_grupo.find(matid) == primer_connect_grupo.end()) {
-                primer_connect_grupo[matid] = primer_conn;
+        if (matid >= 100 && matid <= 120) { //! Why 120? I think gets only boundary elements
+            int64_t primer_conn = cel->ConnectIndex(0);  //! First connect of the element, the first connectivity index
+            if (primer_connect_grupo.find(matid) == primer_connect_grupo.end()) { // if key matid does not exist yet, which means matid not yet assigned 
+                primer_connect_grupo[matid] = primer_conn; // assign the first connect of the first element of the group as the unique connect for that group
                 std::cout << "Grupo matid=" << matid << " → connect=" << primer_conn << std::endl;
             }
         }
     }
+    //This registration pattern appears designed for H1 conforming spaces where you need to enforce constraints or 
+    // apply special boundary conditions. By storing only the first connect index for each boundary group, you create 
+    // a "representative node" or "master DOF" for that group. Later code likely uses this mapping to either condense 
+    // all connects in a group to share the same DOF (for continuity enforcement) or to apply consistent boundary 
+    // conditions across all elements sharing a material ID.
 
-    // PASO 2: Asignar a TODOS los elementos de cada grupo su primer connect
+    // PASO 2: Assign the same connect index to all connects of all elements of the same group
     for (int64_t el = 0; el < cmesh->NElements(); el++) {
         TPZCompEl *cel = cmesh->Element(el);
         if (!cel) continue;
@@ -267,12 +271,14 @@ int H1Vugs(){
         if (!gel) continue;
         
         int matid = gel->MaterialId();
-        if (matid >= 100 && matid <= 120) {
-            int64_t connect_unico = primer_connect_grupo[matid];
+        
+        if (matid >= 100 && matid <= 120) { // Only for boundary elements
+            int64_t connect_unico = primer_connect_grupo[matid]; // Get the unique connect index for this group
             
             // TODOS los connects del elemento apuntan al MISMO connect único
             for(int loc = 0; loc < cel->NConnects(); loc++) {
-                cel->SetConnectIndex(loc, connect_unico);
+                int n_connects = cel->NConnects();
+                cel->SetConnectIndex(loc, connect_unico); // Set all local connects of the element to point to the same unique connect index for that group
             }
             std::cout << "Elemento " << el << " (matid=" << matid
                       << ") → todos connects = " << connect_unico << std::endl;

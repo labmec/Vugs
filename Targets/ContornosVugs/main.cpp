@@ -86,19 +86,11 @@ int main2DFracVug(){
       void findElDim(TPZStack<TPZGeoElSide> &allneigh, int dim, TPZStack<TPZGeoElSide> &allneighdim);
       TPZVec<int64_t> elements_contorno;
       TPZVec<int64_t> elements_internos;
-      //
-      //Parametros de malha
-      //
-      int ncreated = 0;
-      int nels = gmesh->NElements();
-      int matid_vug=6;
-      int matDarcy=1;
-      int meshdim=gmesh->Dimension();
-      int matid_Vugbound=100;
-      //
-      //Criação de elementos 1D no contorno dos vugs
-      //
-      for(int iel=0;iel<nels;iel++){
+        int ncreated = 0;
+        int nels = gmesh->NElements();
+
+
+        for (int iel = 0; iel< nels; iel++) {
             TPZGeoEl *gel = gmesh->Element(iel);
             int dimension_el=gel->Dimension();
             int matid_el=gel->MaterialId();
@@ -119,53 +111,169 @@ int main2DFracVug(){
             }
         }
         std::cout<< "se crearon: " << ncreated << " elements"<<std::endl;
-    //
-    //
-    //
-    //
-    int nels_cont=gmesh->NElements();
-    int mat=100;
-    TPZVec<int64_t> verificador(nels_cont,-1);
-    for(int el=0;el<nels;el++){
-        TPZGeoEl *gel=gmesh->Element(el);
-        if(gel->MaterialId()!=matid_vug)continue;
-        if(verificador[el]!=-1)continue;;
-        TPZStack<int> tocheck;
-        tocheck.Push(el);
-        while(tocheck.size()){
-            int64_t elcheck=tocheck.Pop();
-            if(verificador[elcheck]!=-1)continue;
-            gel = gmesh->Element(elcheck); gel->SetMaterialId(mat+500);
-            int nsides=gel->NSides();
-            int ncorners=gel->NCornerNodes();
-            int firstside= nsides-ncorners-1;
-            verificador[elcheck]=mat;
-            for (int iside = firstside; iside<nsides; iside++) {
-                  TPZGeoElSide gelside(gel, iside);
-                  auto hasDarcyNeigh=gelside.HasNeighbour(matDarcy);
-                  auto hasVugBound=gelside.HasNeighbour(matid_Vugbound);
-                  if(hasDarcyNeigh && !hasVugBound) DebugStop();
-                  TPZGeoElSide neighbour=gelside.Neighbour();
-                  if(hasVugBound) {
-                    TPZGeoEl *boundel = neighbour.Element();
-                    boundel->SetMaterialId(mat);
-                  }
-                  else if(!hasDarcyNeigh){
-                      TPZGeoEl *boundel = neighbour.Element();
 
-                      int64_t neighindex=boundel->Index();
-                      tocheck.Push(neighindex);
-                      }
-                  
-                
+//    //gmesh->BuildConnectivity();
+    int nels2 = gmesh->NElements();
+    TPZVec<int64_t> els_cont1d(nels2,-1);
+    std::cout<<nels2<<std::endl;
+    int nels1d=0;
+    int nels2d=0;
+    for (int i=0;i<nels2;i++){
+        TPZGeoEl *gel=gmesh->Element(i);
+        if (gel->Dimension()== 1) {
+//            std::cout<<"Elemento 1d: "<<i<<std::endl;
+            nels1d++;
+            //break;
+        }
+        else{
+//            std::cout<<"Elemento 2d: "<<i<<std::endl;
+        nels2d++;
+        }
+    }
+    std::cout<<"Elementos 1d: "<<nels1d<<std::endl;
+    std::cout<<"Elementos 2d: "<<nels2d<<std::endl;
+
+    //elements_contorno.Resize(const int64_t newsize)
+
+    TPZVec<int> verificador(nels2, 0);
+    // creador de contornos por ids
+    int mat=100;
+    for (int iel =nels-1; iel<nels2; iel++) {
+
+        TPZGeoEl * gel = gmesh->Element(iel);
+        if (gel->MaterialId() ==100) {
+            std::cout<<"ok "<<std::endl;
+        }
+        if (!gel) {
+            continue;
+        }
+        if (gel->Dimension() != 1) {
+            continue;
+        }
+        if (verificador[iel]==1) {
+            continue;
+        }
+        if (gel->MaterialId() != 100) {
+            continue;
+        }
+        int side = 1;
+
+        TPZGeoElSide gelside(gel, side);
+
+        TPZStack<TPZGeoElSide> allneigh;
+        gelside.AllNeighbours(allneigh);
+        TPZStack<TPZGeoElSide> allneighdim;
+        findElDim(allneigh, 1, allneighdim);
+        int ntest = allneighdim.size();
+        TPZGeoElSide gelneigh = allneighdim[0];
+        gel->SetMaterialId(mat);
+        els_cont1d[iel]=mat;
+        while (gel != gelneigh.Element()) {
+            TPZStack<TPZGeoElSide> allneigh;
+            int sidetest = gelneigh.Side();
+            if (sidetest==0) {
+                gelneigh.SetSide(1);
             }
-            
-            
+            else{
+                gelneigh.SetSide(0);
+            }
+            gelneigh.AllNeighbours(allneigh);
+            TPZStack<TPZGeoElSide> allneighdim;
+            findElDim(allneigh, 1, allneighdim);
+            int indexneig = gelneigh.Element()->Index();
+            verificador[indexneig] =1;
+            gelneigh.Element()->SetMaterialId(mat);
+            els_cont1d[indexneig]=mat;
+            gelneigh =allneighdim[0];
             
         }
         mat++;
+        int ok=0;
     }
 
+    if(nels2==els_cont1d.size()){
+        std::cout<<"Ok"<<std::endl;
+    }
+    TPZVec<int64_t> AllVugsEls2d;
+    for(int ind=0;ind<nels2;ind++){
+        TPZGeoEl *gEl=gmesh->Element(ind);
+        if (!gEl) {
+            continue;
+        }
+        if (gEl->Dimension() != 2) {
+            continue;
+        }
+        if(gEl->MaterialId()!=6){
+            continue;
+        }
+        AllVugsEls2d.push_back(ind);
+    }
+    std::cout<<"All vugs 2D size: "<<AllVugsEls2d.size()<<std::endl;
+    int ElVugs_identified=0;
+
+    for(int ind=0;ind<AllVugsEls2d.size();ind++){
+        TPZGeoEl *gEl=gmesh->Element(AllVugsEls2d[ind]);
+        if (!gEl) {
+            continue;
+        }
+        if (els_cont1d[ind]!=-1) {  // Fix: usa ind correcto
+            continue;
+        }
+        int sides=gEl->NSides();
+        for(int side = 3; side < sides; side++) {  // side=4 (no 3)
+            TPZGeoElSide gelside(gEl, side);
+            TPZStack<TPZGeoElSide> allneigh;
+            gelside.AllNeighbours(allneigh);
+            TPZStack<TPZGeoElSide> allneighdim, allneighdim2D;
+            findElDim(allneigh, 1, allneighdim);
+            findElDim(allneigh, 2, allneighdim2D);
+
+            if(allneighdim.NElements()>0){
+                TPZGeoElSide gelneigh = allneighdim[0];
+                auto matid1=gelneigh.Element()->MaterialId();
+                std::cout << "  Lado " << side << " → Elemento " << AllVugsEls2d[ind]
+                          << " (matID=" << matid1 << ")" << std::endl;
+                gEl->SetMaterialId(500+matid1);
+                els_cont1d[AllVugsEls2d[ind]] = 500+matid1;  // Fix: índice real
+                ElVugs_identified++;
+                break;  // Solo un contorno por elemento
+            }
+        }
+    }
+
+    bool expanded = true;
+    while(expanded) {
+        expanded = false;
+        for(int ind=0; ind<AllVugsEls2d.size(); ind++) {
+            int64_t elIdx = AllVugsEls2d[ind];
+            if(els_cont1d[elIdx] != -1) continue;  // Ya marcado
+            
+            TPZGeoEl *gEl = gmesh->Element(elIdx);
+            int sides = gEl->NSides();
+            for(int side=3; side<sides; side++) {
+                TPZGeoElSide gelside(gEl, side);
+                TPZStack<TPZGeoElSide> allneigh;
+                gelside.AllNeighbours(allneigh);
+                TPZStack<TPZGeoElSide> neigh2D;
+                findElDim(allneigh, 2, neigh2D);
+                
+                for(int n=0; n<neigh2D.NElements(); n++) {
+                    int64_t nidx = neigh2D[n].Element()->Index();
+                    if(els_cont1d[nidx] > 500) {  // Tiene vecino MARCADO
+                        els_cont1d[elIdx] = els_cont1d[nidx];  // Hereda
+                        gEl->SetMaterialId(els_cont1d[elIdx]);
+                        ElVugs_identified++;
+                        expanded = true;
+                        break;
+                    }
+                }
+                if(expanded) break;
+            }
+                if(expanded) break;
+        }
+    }
+
+    std::cout << "TOTAL ElVugs_identified: " << ElVugs_identified << std::endl;
 
     
 

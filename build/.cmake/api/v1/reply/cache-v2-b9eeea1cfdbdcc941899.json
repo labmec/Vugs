@@ -55,7 +55,7 @@
 				}
 			],
 			"type" : "INTERNAL",
-			"value" : "/home/itopo/Stokes-Darcy_Research/Vugs/build"
+			"value" : "/home/marina/programming/Stokes-Darcy-Research/VUGS/build"
 		},
 		{
 			"name" : "CMAKE_CACHE_MAJOR_VERSION",
@@ -543,7 +543,7 @@
 				}
 			],
 			"type" : "STATIC",
-			"value" : "/home/itopo/Stokes-Darcy_Research/Vugs/build/CMakeFiles/pkgRedirects"
+			"value" : "/home/marina/programming/Stokes-Darcy-Research/VUGS/build/CMakeFiles/pkgRedirects"
 		},
 		{
 			"name" : "CMAKE_GENERATOR",
@@ -603,7 +603,7 @@
 				}
 			],
 			"type" : "INTERNAL",
-			"value" : "/home/itopo/Stokes-Darcy_Research/Vugs"
+			"value" : "/home/marina/programming/Stokes-Darcy-Research/VUGS"
 		},
 		{
 			"name" : "CMAKE_INSTALL_PREFIX",
@@ -1155,7 +1155,7 @@
 				}
 			],
 			"type" : "STATIC",
-			"value" : "/home/itopo/Stokes-Darcy_Research/Vugs/build"
+			"value" : "/home/marina/programming/Stokes-Darcy-Research/VUGS/build"
 		},
 		{
 			"name" : "MyProject_IS_TOP_LEVEL",
@@ -1179,7 +1179,7 @@
 				}
 			],
 			"type" : "STATIC",
-			"value" : "/home/itopo/Stokes-Darcy_Research/Vugs"
+			"value" : "/home/marina/programming/Stokes-Darcy-Research/VUGS"
 		},
 		{
 			"name" : "NeoPZ_DIR",
@@ -1191,7 +1191,7 @@
 				}
 			],
 			"type" : "PATH",
-			"value" : "/home/itopo/Stokes-Darcy_Research/neopz_install/lib/cmake/neopz"
+			"value" : "/home/marina/programming/Stokes-Darcy-Research/neopz_install/lib/cmake/neopz"
 		},
 		{
 			"name" : "_CMAKE_LINKER_PUSHPOP_STATE_SUPPORTED",

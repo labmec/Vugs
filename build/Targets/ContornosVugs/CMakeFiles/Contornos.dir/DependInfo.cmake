@@ -8,7 +8,7 @@ set(CMAKE_DEPENDS_LANGUAGES
 
 # The set of dependency files which are needed:
 set(CMAKE_DEPENDS_DEPENDENCY_FILES
-  "/home/itopo/Stokes-Darcy_Research/Vugs/Targets/ContornosVugs/main.cpp" "Targets/ContornosVugs/CMakeFiles/Contornos.dir/main.cpp.o" "gcc" "Targets/ContornosVugs/CMakeFiles/Contornos.dir/main.cpp.o.d"
+  "/home/marina/programming/Stokes-Darcy-Research/VUGS/Targets/ContornosVugs/main.cpp" "Targets/ContornosVugs/CMakeFiles/Contornos.dir/main.cpp.o" "gcc" "Targets/ContornosVugs/CMakeFiles/Contornos.dir/main.cpp.o.d"
   )
 
 # Targets to which this target links which contain Fortran sources.

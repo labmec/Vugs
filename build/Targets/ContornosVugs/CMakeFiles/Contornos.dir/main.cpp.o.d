@@ -1,5 +1,5 @@
-Targets/SimulacaoPconstH1/CMakeFiles/TestH1.dir/main.cpp.o: \
- /home/marina/programming/Stokes-Darcy-Research/VUGS/Targets/SimulacaoPconstH1/main.cpp \
+Targets/ContornosVugs/CMakeFiles/Contornos.dir/main.cpp.o: \
+ /home/marina/programming/Stokes-Darcy-Research/VUGS/Targets/ContornosVugs/main.cpp \
  /usr/include/stdc-predef.h /usr/include/c++/13/iostream \
  /usr/include/c++/13/bits/requires_hosted.h \
  /usr/include/x86_64-linux-gnu/c++/13/bits/c++config.h \
@@ -396,4 +396,7 @@ Targets/SimulacaoPconstH1/CMakeFiles/TestH1.dir/main.cpp.o: \
  /home/marina/programming/Stokes-Darcy-Research/neopz_install/pz/include/Mesh/TPZMultiphysicsInterfaceEl.h \
  /home/marina/programming/Stokes-Darcy-Research/neopz_install/pz/include/Mesh/pzmultiphysicselement.h \
  /home/marina/programming/Stokes-Darcy-Research/neopz_install/pz/include/Mesh/pzgeoelbc.h \
- /home/marina/programming/Stokes-Darcy-Research/neopz_install/pz/include/Material/TPZMaterialDataT.h
+ /home/marina/programming/Stokes-Darcy-Research/neopz_install/pz/include/Material/TPZMaterialDataT.h \
+ /home/marina/programming/Stokes-Darcy-Research/VUGS/Targets/ContornosVugs/TSFMixedDarcy.h \
+ /home/marina/programming/Stokes-Darcy-Research/neopz_install/pz/include/Pre/TPZHDivApproxCreator.h \
+ /home/marina/programming/Stokes-Darcy-Research/neopz_install/pz/include/Pre/TPZApproxCreator.h

@@ -8,7 +8,7 @@ set(CMAKE_DEPENDS_LANGUAGES
 
 # The set of dependency files which are needed:
 set(CMAKE_DEPENDS_DEPENDENCY_FILES
-  "/home/itopo/Stokes-Darcy_Research/Vugs/Targets/ComparacaoH1xHdiv/main.cpp" "Targets/ComparacaoH1xHdiv/CMakeFiles/Comparacao.dir/main.cpp.o" "gcc" "Targets/ComparacaoH1xHdiv/CMakeFiles/Comparacao.dir/main.cpp.o.d"
+  "/home/marina/programming/Stokes-Darcy-Research/VUGS/Targets/ComparacaoH1xHdiv/main.cpp" "Targets/ComparacaoH1xHdiv/CMakeFiles/Comparacao.dir/main.cpp.o" "gcc" "Targets/ComparacaoH1xHdiv/CMakeFiles/Comparacao.dir/main.cpp.o.d"
   )
 
 # Targets to which this target links which contain Fortran sources.

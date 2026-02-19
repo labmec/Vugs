@@ -1,4 +1,4 @@
-# Install script for directory: /home/itopo/Stokes-Darcy_Research/Vugs/Targets/SimulacaoPconstH1
+# Install script for directory: /home/marina/programming/Stokes-Darcy-Research/VUGS/Targets/SimulacaoPconstH1
 
 # Set the install prefix
 if(NOT DEFINED CMAKE_INSTALL_PREFIX)

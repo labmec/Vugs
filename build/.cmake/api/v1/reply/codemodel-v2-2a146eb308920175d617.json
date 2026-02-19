@@ -107,21 +107,21 @@
 				{
 					"directoryIndex" : 2,
 					"id" : "Comparacao::@51b32c6ecaf2c2d97c1d",
-					"jsonFile" : "target-Comparacao-Debug-984e9414c4b681565de2.json",
+					"jsonFile" : "target-Comparacao-Debug-4413b0d24a568a81e548.json",
 					"name" : "Comparacao",
 					"projectIndex" : 0
 				},
 				{
 					"directoryIndex" : 3,
 					"id" : "Contornos::@69b32832e65e54e0ac4d",
-					"jsonFile" : "target-Contornos-Debug-57f5f421413bfb993026.json",
+					"jsonFile" : "target-Contornos-Debug-a099c88af60dabc8c2de.json",
 					"name" : "Contornos",
 					"projectIndex" : 0
 				},
 				{
 					"directoryIndex" : 4,
 					"id" : "TestH1::@927d0e522fbea63de8ca",
-					"jsonFile" : "target-TestH1-Debug-ae54caf18eb4d3378130.json",
+					"jsonFile" : "target-TestH1-Debug-88b8a99fc0cd4cbe0561.json",
 					"name" : "TestH1",
 					"projectIndex" : 0
 				}
@@ -131,8 +131,8 @@
 	"kind" : "codemodel",
 	"paths" : 
 	{
-		"build" : "/home/itopo/Stokes-Darcy_Research/Vugs/build",
-		"source" : "/home/itopo/Stokes-Darcy_Research/Vugs"
+		"build" : "/home/marina/programming/Stokes-Darcy-Research/VUGS/build",
+		"source" : "/home/marina/programming/Stokes-Darcy-Research/VUGS"
 	},
 	"version" : 
 	{

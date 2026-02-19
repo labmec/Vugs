@@ -53,10 +53,10 @@ RM = /usr/bin/cmake -E rm -f
 EQUALS = =
 
 # The top-level source directory on which CMake was run.
-CMAKE_SOURCE_DIR = /home/itopo/Stokes-Darcy_Research/Vugs
+CMAKE_SOURCE_DIR = /home/marina/programming/Stokes-Darcy-Research/VUGS
 
 # The top-level build directory on which CMake was run.
-CMAKE_BINARY_DIR = /home/itopo/Stokes-Darcy_Research/Vugs/build
+CMAKE_BINARY_DIR = /home/marina/programming/Stokes-Darcy-Research/VUGS/build
 
 # Include any dependencies generated for this target.
 include Targets/ContornosVugs/CMakeFiles/Contornos.dir/depend.make
@@ -70,18 +70,18 @@ include Targets/ContornosVugs/CMakeFiles/Contornos.dir/progress.make
 include Targets/ContornosVugs/CMakeFiles/Contornos.dir/flags.make
 
 Targets/ContornosVugs/CMakeFiles/Contornos.dir/main.cpp.o: Targets/ContornosVugs/CMakeFiles/Contornos.dir/flags.make
-Targets/ContornosVugs/CMakeFiles/Contornos.dir/main.cpp.o: /home/itopo/Stokes-Darcy_Research/Vugs/Targets/ContornosVugs/main.cpp
+Targets/ContornosVugs/CMakeFiles/Contornos.dir/main.cpp.o: /home/marina/programming/Stokes-Darcy-Research/VUGS/Targets/ContornosVugs/main.cpp
 Targets/ContornosVugs/CMakeFiles/Contornos.dir/main.cpp.o: Targets/ContornosVugs/CMakeFiles/Contornos.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/itopo/Stokes-Darcy_Research/Vugs/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_1) "Building CXX object Targets/ContornosVugs/CMakeFiles/Contornos.dir/main.cpp.o"
-	cd /home/itopo/Stokes-Darcy_Research/Vugs/build/Targets/ContornosVugs && /usr/bin/g++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT Targets/ContornosVugs/CMakeFiles/Contornos.dir/main.cpp.o -MF CMakeFiles/Contornos.dir/main.cpp.o.d -o CMakeFiles/Contornos.dir/main.cpp.o -c /home/itopo/Stokes-Darcy_Research/Vugs/Targets/ContornosVugs/main.cpp
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/marina/programming/Stokes-Darcy-Research/VUGS/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_1) "Building CXX object Targets/ContornosVugs/CMakeFiles/Contornos.dir/main.cpp.o"
+	cd /home/marina/programming/Stokes-Darcy-Research/VUGS/build/Targets/ContornosVugs && /usr/bin/g++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT Targets/ContornosVugs/CMakeFiles/Contornos.dir/main.cpp.o -MF CMakeFiles/Contornos.dir/main.cpp.o.d -o CMakeFiles/Contornos.dir/main.cpp.o -c /home/marina/programming/Stokes-Darcy-Research/VUGS/Targets/ContornosVugs/main.cpp
 
 Targets/ContornosVugs/CMakeFiles/Contornos.dir/main.cpp.i: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Preprocessing CXX source to CMakeFiles/Contornos.dir/main.cpp.i"
-	cd /home/itopo/Stokes-Darcy_Research/Vugs/build/Targets/ContornosVugs && /usr/bin/g++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /home/itopo/Stokes-Darcy_Research/Vugs/Targets/ContornosVugs/main.cpp > CMakeFiles/Contornos.dir/main.cpp.i
+	cd /home/marina/programming/Stokes-Darcy-Research/VUGS/build/Targets/ContornosVugs && /usr/bin/g++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /home/marina/programming/Stokes-Darcy-Research/VUGS/Targets/ContornosVugs/main.cpp > CMakeFiles/Contornos.dir/main.cpp.i
 
 Targets/ContornosVugs/CMakeFiles/Contornos.dir/main.cpp.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling CXX source to assembly CMakeFiles/Contornos.dir/main.cpp.s"
-	cd /home/itopo/Stokes-Darcy_Research/Vugs/build/Targets/ContornosVugs && /usr/bin/g++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /home/itopo/Stokes-Darcy_Research/Vugs/Targets/ContornosVugs/main.cpp -o CMakeFiles/Contornos.dir/main.cpp.s
+	cd /home/marina/programming/Stokes-Darcy-Research/VUGS/build/Targets/ContornosVugs && /usr/bin/g++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /home/marina/programming/Stokes-Darcy-Research/VUGS/Targets/ContornosVugs/main.cpp -o CMakeFiles/Contornos.dir/main.cpp.s
 
 # Object files for target Contornos
 Contornos_OBJECTS = \
@@ -92,20 +92,20 @@ Contornos_EXTERNAL_OBJECTS =
 
 Targets/ContornosVugs/Contornos: Targets/ContornosVugs/CMakeFiles/Contornos.dir/main.cpp.o
 Targets/ContornosVugs/Contornos: Targets/ContornosVugs/CMakeFiles/Contornos.dir/build.make
-Targets/ContornosVugs/Contornos: /home/itopo/Stokes-Darcy_Research/neopz_install/pz/lib/libpz.so
+Targets/ContornosVugs/Contornos: /home/marina/programming/Stokes-Darcy-Research/neopz_install/pz/lib/libpz.so
 Targets/ContornosVugs/Contornos: Targets/ContornosVugs/CMakeFiles/Contornos.dir/link.txt
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --bold --progress-dir=/home/itopo/Stokes-Darcy_Research/Vugs/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_2) "Linking CXX executable Contornos"
-	cd /home/itopo/Stokes-Darcy_Research/Vugs/build/Targets/ContornosVugs && $(CMAKE_COMMAND) -E cmake_link_script CMakeFiles/Contornos.dir/link.txt --verbose=$(VERBOSE)
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --bold --progress-dir=/home/marina/programming/Stokes-Darcy-Research/VUGS/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_2) "Linking CXX executable Contornos"
+	cd /home/marina/programming/Stokes-Darcy-Research/VUGS/build/Targets/ContornosVugs && $(CMAKE_COMMAND) -E cmake_link_script CMakeFiles/Contornos.dir/link.txt --verbose=$(VERBOSE)
 
 # Rule to build all files generated by this target.
 Targets/ContornosVugs/CMakeFiles/Contornos.dir/build: Targets/ContornosVugs/Contornos
 .PHONY : Targets/ContornosVugs/CMakeFiles/Contornos.dir/build
 
 Targets/ContornosVugs/CMakeFiles/Contornos.dir/clean:
-	cd /home/itopo/Stokes-Darcy_Research/Vugs/build/Targets/ContornosVugs && $(CMAKE_COMMAND) -P CMakeFiles/Contornos.dir/cmake_clean.cmake
+	cd /home/marina/programming/Stokes-Darcy-Research/VUGS/build/Targets/ContornosVugs && $(CMAKE_COMMAND) -P CMakeFiles/Contornos.dir/cmake_clean.cmake
 .PHONY : Targets/ContornosVugs/CMakeFiles/Contornos.dir/clean
 
 Targets/ContornosVugs/CMakeFiles/Contornos.dir/depend:
-	cd /home/itopo/Stokes-Darcy_Research/Vugs/build && $(CMAKE_COMMAND) -E cmake_depends "Unix Makefiles" /home/itopo/Stokes-Darcy_Research/Vugs /home/itopo/Stokes-Darcy_Research/Vugs/Targets/ContornosVugs /home/itopo/Stokes-Darcy_Research/Vugs/build /home/itopo/Stokes-Darcy_Research/Vugs/build/Targets/ContornosVugs /home/itopo/Stokes-Darcy_Research/Vugs/build/Targets/ContornosVugs/CMakeFiles/Contornos.dir/DependInfo.cmake "--color=$(COLOR)"
+	cd /home/marina/programming/Stokes-Darcy-Research/VUGS/build && $(CMAKE_COMMAND) -E cmake_depends "Unix Makefiles" /home/marina/programming/Stokes-Darcy-Research/VUGS /home/marina/programming/Stokes-Darcy-Research/VUGS/Targets/ContornosVugs /home/marina/programming/Stokes-Darcy-Research/VUGS/build /home/marina/programming/Stokes-Darcy-Research/VUGS/build/Targets/ContornosVugs /home/marina/programming/Stokes-Darcy-Research/VUGS/build/Targets/ContornosVugs/CMakeFiles/Contornos.dir/DependInfo.cmake "--color=$(COLOR)"
 .PHONY : Targets/ContornosVugs/CMakeFiles/Contornos.dir/depend
 

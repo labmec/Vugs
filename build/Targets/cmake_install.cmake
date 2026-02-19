@@ -1,4 +1,4 @@
-# Install script for directory: /home/itopo/Stokes-Darcy_Research/Vugs/Targets
+# Install script for directory: /home/marina/programming/Stokes-Darcy-Research/VUGS/Targets
 
 # Set the install prefix
 if(NOT DEFINED CMAKE_INSTALL_PREFIX)
@@ -44,9 +44,9 @@ endif()
 
 if(NOT CMAKE_INSTALL_LOCAL_ONLY)
   # Include the install script for each subdirectory.
-  include("/home/itopo/Stokes-Darcy_Research/Vugs/build/Targets/ComparacaoH1xHdiv/cmake_install.cmake")
-  include("/home/itopo/Stokes-Darcy_Research/Vugs/build/Targets/ContornosVugs/cmake_install.cmake")
-  include("/home/itopo/Stokes-Darcy_Research/Vugs/build/Targets/SimulacaoPconstH1/cmake_install.cmake")
+  include("/home/marina/programming/Stokes-Darcy-Research/VUGS/build/Targets/ComparacaoH1xHdiv/cmake_install.cmake")
+  include("/home/marina/programming/Stokes-Darcy-Research/VUGS/build/Targets/ContornosVugs/cmake_install.cmake")
+  include("/home/marina/programming/Stokes-Darcy-Research/VUGS/build/Targets/SimulacaoPconstH1/cmake_install.cmake")
 
 endif()
 

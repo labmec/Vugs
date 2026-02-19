@@ -282,7 +282,7 @@ int main2DFracVug(){
 //    std::cout<<"Vec_cont1D[1] : "<<els_cont1d[0]<<std::endl;
 //    std::cout<<"Vec_cont1D[1] : "<<els_cont1d[1]<<std::endl;
 
-}
+}}
 
 
     //devuelve una malla L2

@@ -1,4 +1,4 @@
-# Install script for directory: /home/itopo/Stokes-Darcy_Research/Vugs
+# Install script for directory: /home/marina/programming/Stokes-Darcy-Research/VUGS
 
 # Set the install prefix
 if(NOT DEFINED CMAKE_INSTALL_PREFIX)
@@ -44,7 +44,7 @@ endif()
 
 if(NOT CMAKE_INSTALL_LOCAL_ONLY)
   # Include the install script for each subdirectory.
-  include("/home/itopo/Stokes-Darcy_Research/Vugs/build/Targets/cmake_install.cmake")
+  include("/home/marina/programming/Stokes-Darcy-Research/VUGS/build/Targets/cmake_install.cmake")
 
 endif()
 
@@ -56,5 +56,5 @@ endif()
 
 string(REPLACE ";" "\n" CMAKE_INSTALL_MANIFEST_CONTENT
        "${CMAKE_INSTALL_MANIFEST_FILES}")
-file(WRITE "/home/itopo/Stokes-Darcy_Research/Vugs/build/${CMAKE_INSTALL_MANIFEST}"
+file(WRITE "/home/marina/programming/Stokes-Darcy-Research/VUGS/build/${CMAKE_INSTALL_MANIFEST}"
      "${CMAKE_INSTALL_MANIFEST_CONTENT}")

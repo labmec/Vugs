@@ -74,7 +74,8 @@ int main2DFracVug(){
 
 
 
-      std::string filename="/Users/victorvillegassalabarria/python-test/testskelSLICE77SP.msh";
+      //std::string filename="/Users/victorvillegassalabarria/python-test/testskelSLICE77SP.msh";
+      std::string filename="/Users/victorvillegassalabarria/Documents/Github/Vugs/FastMesh.msh";
 
       gmesh = generateGMeshWithPhysTagVec(filename, dim_name_and_physical_tagCoarse);
       TPZCompMesh *cmesh =  new TPZCompMesh(gmesh);

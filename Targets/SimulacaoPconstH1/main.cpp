@@ -98,7 +98,8 @@ int H1Vugs(){
       dim_name_and_physical_tagCoarse[1]["noflux"] = 4;
 
 
-      std::string filename="/home/marina/programming/Stokes-Darcy-Research/VUGS/testskelSLICE77SP.msh";
+      //std::string filename="/home/marina/programming/Stokes-Darcy-Research/VUGS/testskelSLICE77SP.msh";
+      std::string filename="/home/itopo/Stokes-Darcy_Research/Vugs/testskelSLICE77SP.msh";
 
       gmesh = generateGMeshWithPhysTagVec(filename, dim_name_and_physical_tagCoarse);
         int ncreated = 0;
@@ -247,12 +248,16 @@ int H1Vugs(){
       TPZBndCond * face1 = matDarcy->CreateBC(matDarcy,bcOutletId,bc_typeD,val1,val2);
       cmesh->InsertMaterialObject(face1);
 
+    std::cout << "Número de vugs identificados: " << nVugs << std::endl;
+    std::cout << "Number of geo elements before creating vug boundaries: " << nels << std::endl;
+    std::cout << "Number of geo elements after creating vug boundaries: " << gmesh->NElements() << std::endl;
+
     //TODO Create comp elements of Vug Boundary
-    for(int iel = 0; iel < nVugs; iel++) {
-        int matid = MatBoundVug + iel;
-        TPZBndCond *faceVug = matDarcySmallVug->CreateBC(matDarcySmallVug,matid,bc_typeD,val1,val2);
-        cmesh->InsertMaterialObject(faceVug);
-    }
+    //for(int iel = 0; iel < nVugs; iel++) {
+    //    int matid = MatBoundVug + iel;
+    //    TPZBndCond *faceVug = matDarcySmallVug->CreateBC(matDarcySmallVug,matid,bc_typeD,val1,val2);
+    //    cmesh->InsertMaterialObject(faceVug);
+    //}
 
 
       

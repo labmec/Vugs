@@ -1,1 +1,1 @@
-/usr/bin/g++ -g CMakeFiles/Comparacao.dir/main.cpp.o -o Comparacao  -Wl,-rpath,/home/itopo/Stokes-Darcy_Research/neopz_install/pz/lib /home/itopo/Stokes-Darcy_Research/neopz_install/pz/lib/libpz.so 
+/usr/bin/g++ -g CMakeFiles/Comparacao.dir/main.cpp.o -o Comparacao  -Wl,-rpath,/home/marina/programming/Stokes-Darcy-Research/neopz_install/pz/lib /home/marina/programming/Stokes-Darcy-Research/neopz_install/pz/lib/libpz.so 

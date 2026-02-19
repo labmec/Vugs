@@ -53,10 +53,10 @@ RM = /usr/bin/cmake -E rm -f
 EQUALS = =
 
 # The top-level source directory on which CMake was run.
-CMAKE_SOURCE_DIR = /home/itopo/Stokes-Darcy_Research/Vugs
+CMAKE_SOURCE_DIR = /home/marina/programming/Stokes-Darcy-Research/VUGS
 
 # The top-level build directory on which CMake was run.
-CMAKE_BINARY_DIR = /home/itopo/Stokes-Darcy_Research/Vugs/build
+CMAKE_BINARY_DIR = /home/marina/programming/Stokes-Darcy-Research/VUGS/build
 
 # Include any dependencies generated for this target.
 include Targets/ComparacaoH1xHdiv/CMakeFiles/Comparacao.dir/depend.make
@@ -70,18 +70,18 @@ include Targets/ComparacaoH1xHdiv/CMakeFiles/Comparacao.dir/progress.make
 include Targets/ComparacaoH1xHdiv/CMakeFiles/Comparacao.dir/flags.make
 
 Targets/ComparacaoH1xHdiv/CMakeFiles/Comparacao.dir/main.cpp.o: Targets/ComparacaoH1xHdiv/CMakeFiles/Comparacao.dir/flags.make
-Targets/ComparacaoH1xHdiv/CMakeFiles/Comparacao.dir/main.cpp.o: /home/itopo/Stokes-Darcy_Research/Vugs/Targets/ComparacaoH1xHdiv/main.cpp
+Targets/ComparacaoH1xHdiv/CMakeFiles/Comparacao.dir/main.cpp.o: /home/marina/programming/Stokes-Darcy-Research/VUGS/Targets/ComparacaoH1xHdiv/main.cpp
 Targets/ComparacaoH1xHdiv/CMakeFiles/Comparacao.dir/main.cpp.o: Targets/ComparacaoH1xHdiv/CMakeFiles/Comparacao.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/itopo/Stokes-Darcy_Research/Vugs/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_1) "Building CXX object Targets/ComparacaoH1xHdiv/CMakeFiles/Comparacao.dir/main.cpp.o"
-	cd /home/itopo/Stokes-Darcy_Research/Vugs/build/Targets/ComparacaoH1xHdiv && /usr/bin/g++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT Targets/ComparacaoH1xHdiv/CMakeFiles/Comparacao.dir/main.cpp.o -MF CMakeFiles/Comparacao.dir/main.cpp.o.d -o CMakeFiles/Comparacao.dir/main.cpp.o -c /home/itopo/Stokes-Darcy_Research/Vugs/Targets/ComparacaoH1xHdiv/main.cpp
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/marina/programming/Stokes-Darcy-Research/VUGS/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_1) "Building CXX object Targets/ComparacaoH1xHdiv/CMakeFiles/Comparacao.dir/main.cpp.o"
+	cd /home/marina/programming/Stokes-Darcy-Research/VUGS/build/Targets/ComparacaoH1xHdiv && /usr/bin/g++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT Targets/ComparacaoH1xHdiv/CMakeFiles/Comparacao.dir/main.cpp.o -MF CMakeFiles/Comparacao.dir/main.cpp.o.d -o CMakeFiles/Comparacao.dir/main.cpp.o -c /home/marina/programming/Stokes-Darcy-Research/VUGS/Targets/ComparacaoH1xHdiv/main.cpp
 
 Targets/ComparacaoH1xHdiv/CMakeFiles/Comparacao.dir/main.cpp.i: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Preprocessing CXX source to CMakeFiles/Comparacao.dir/main.cpp.i"
-	cd /home/itopo/Stokes-Darcy_Research/Vugs/build/Targets/ComparacaoH1xHdiv && /usr/bin/g++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /home/itopo/Stokes-Darcy_Research/Vugs/Targets/ComparacaoH1xHdiv/main.cpp > CMakeFiles/Comparacao.dir/main.cpp.i
+	cd /home/marina/programming/Stokes-Darcy-Research/VUGS/build/Targets/ComparacaoH1xHdiv && /usr/bin/g++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /home/marina/programming/Stokes-Darcy-Research/VUGS/Targets/ComparacaoH1xHdiv/main.cpp > CMakeFiles/Comparacao.dir/main.cpp.i
 
 Targets/ComparacaoH1xHdiv/CMakeFiles/Comparacao.dir/main.cpp.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling CXX source to assembly CMakeFiles/Comparacao.dir/main.cpp.s"
-	cd /home/itopo/Stokes-Darcy_Research/Vugs/build/Targets/ComparacaoH1xHdiv && /usr/bin/g++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /home/itopo/Stokes-Darcy_Research/Vugs/Targets/ComparacaoH1xHdiv/main.cpp -o CMakeFiles/Comparacao.dir/main.cpp.s
+	cd /home/marina/programming/Stokes-Darcy-Research/VUGS/build/Targets/ComparacaoH1xHdiv && /usr/bin/g++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /home/marina/programming/Stokes-Darcy-Research/VUGS/Targets/ComparacaoH1xHdiv/main.cpp -o CMakeFiles/Comparacao.dir/main.cpp.s
 
 # Object files for target Comparacao
 Comparacao_OBJECTS = \
@@ -92,20 +92,20 @@ Comparacao_EXTERNAL_OBJECTS =
 
 Targets/ComparacaoH1xHdiv/Comparacao: Targets/ComparacaoH1xHdiv/CMakeFiles/Comparacao.dir/main.cpp.o
 Targets/ComparacaoH1xHdiv/Comparacao: Targets/ComparacaoH1xHdiv/CMakeFiles/Comparacao.dir/build.make
-Targets/ComparacaoH1xHdiv/Comparacao: /home/itopo/Stokes-Darcy_Research/neopz_install/pz/lib/libpz.so
+Targets/ComparacaoH1xHdiv/Comparacao: /home/marina/programming/Stokes-Darcy-Research/neopz_install/pz/lib/libpz.so
 Targets/ComparacaoH1xHdiv/Comparacao: Targets/ComparacaoH1xHdiv/CMakeFiles/Comparacao.dir/link.txt
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --bold --progress-dir=/home/itopo/Stokes-Darcy_Research/Vugs/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_2) "Linking CXX executable Comparacao"
-	cd /home/itopo/Stokes-Darcy_Research/Vugs/build/Targets/ComparacaoH1xHdiv && $(CMAKE_COMMAND) -E cmake_link_script CMakeFiles/Comparacao.dir/link.txt --verbose=$(VERBOSE)
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --bold --progress-dir=/home/marina/programming/Stokes-Darcy-Research/VUGS/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_2) "Linking CXX executable Comparacao"
+	cd /home/marina/programming/Stokes-Darcy-Research/VUGS/build/Targets/ComparacaoH1xHdiv && $(CMAKE_COMMAND) -E cmake_link_script CMakeFiles/Comparacao.dir/link.txt --verbose=$(VERBOSE)
 
 # Rule to build all files generated by this target.
 Targets/ComparacaoH1xHdiv/CMakeFiles/Comparacao.dir/build: Targets/ComparacaoH1xHdiv/Comparacao
 .PHONY : Targets/ComparacaoH1xHdiv/CMakeFiles/Comparacao.dir/build
 
 Targets/ComparacaoH1xHdiv/CMakeFiles/Comparacao.dir/clean:
-	cd /home/itopo/Stokes-Darcy_Research/Vugs/build/Targets/ComparacaoH1xHdiv && $(CMAKE_COMMAND) -P CMakeFiles/Comparacao.dir/cmake_clean.cmake
+	cd /home/marina/programming/Stokes-Darcy-Research/VUGS/build/Targets/ComparacaoH1xHdiv && $(CMAKE_COMMAND) -P CMakeFiles/Comparacao.dir/cmake_clean.cmake
 .PHONY : Targets/ComparacaoH1xHdiv/CMakeFiles/Comparacao.dir/clean
 
 Targets/ComparacaoH1xHdiv/CMakeFiles/Comparacao.dir/depend:
-	cd /home/itopo/Stokes-Darcy_Research/Vugs/build && $(CMAKE_COMMAND) -E cmake_depends "Unix Makefiles" /home/itopo/Stokes-Darcy_Research/Vugs /home/itopo/Stokes-Darcy_Research/Vugs/Targets/ComparacaoH1xHdiv /home/itopo/Stokes-Darcy_Research/Vugs/build /home/itopo/Stokes-Darcy_Research/Vugs/build/Targets/ComparacaoH1xHdiv /home/itopo/Stokes-Darcy_Research/Vugs/build/Targets/ComparacaoH1xHdiv/CMakeFiles/Comparacao.dir/DependInfo.cmake "--color=$(COLOR)"
+	cd /home/marina/programming/Stokes-Darcy-Research/VUGS/build && $(CMAKE_COMMAND) -E cmake_depends "Unix Makefiles" /home/marina/programming/Stokes-Darcy-Research/VUGS /home/marina/programming/Stokes-Darcy-Research/VUGS/Targets/ComparacaoH1xHdiv /home/marina/programming/Stokes-Darcy-Research/VUGS/build /home/marina/programming/Stokes-Darcy-Research/VUGS/build/Targets/ComparacaoH1xHdiv /home/marina/programming/Stokes-Darcy-Research/VUGS/build/Targets/ComparacaoH1xHdiv/CMakeFiles/Comparacao.dir/DependInfo.cmake "--color=$(COLOR)"
 .PHONY : Targets/ComparacaoH1xHdiv/CMakeFiles/Comparacao.dir/depend
 

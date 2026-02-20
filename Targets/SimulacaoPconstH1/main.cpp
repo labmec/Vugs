@@ -50,6 +50,7 @@ void insertAtomicMaterials(TPZCompMesh *cmesh, std::set<int> matIdsVol, std::set
 TPZGeoMesh* generateGMeshWithPhysTagVec(std::string& filename, TPZManVector<std::map<std::string,int>,4>& dim_name_and_physical_tagFine);
 void findElDim(TPZStack<TPZGeoElSide> &allneigh, int dim, TPZStack<TPZGeoElSide> &allneighdim);
 int VugId(int matid);
+void PrintCompMesh(TPZCompMesh *cmesh);
 
 enum EMatIds {
     MatDarcy = 1,
@@ -91,12 +92,14 @@ int H1Vugs(){
 
 
     //std::string filename="/home/marina/programming/Stokes-Darcy-Research/VUGS/testskelSLICE77SP.msh";
-    std::string filename="/home/itopo/Stokes-Darcy_Research/Vugs/testskelSLICE77SP.msh";
+    std::string filename="/home/marina/programming/Stokes-Darcy-Research/VUGS/FastMesh.msh";
+    //std::string filename="/home/itopo/Stokes-Darcy_Research/Vugs/testskelSLICE77SP.msh";
 
     gmesh = generateGMeshWithPhysTagVec(filename, dim_name_and_physical_tagCoarse);
     int ncreated = 0;
     int nels = gmesh->NElements();
     int nVugs = 0;
+    int nElVugBound = 0;
 
     for (int iel = 0; iel< nels; iel++) {
         TPZGeoEl *gel = gmesh->Element(iel);
@@ -137,7 +140,7 @@ int H1Vugs(){
                 int matNeigh = gelneigh->MaterialId();
                 if (matNeigh != matid && (gel->Dimension() == gelneigh->Dimension()) ) {
                     gelside.Element()->CreateBCGeoEl(iside, 100);
-                    ncreated++;
+                    nElVugBound++;
                 }
             }
         }
@@ -237,7 +240,7 @@ int H1Vugs(){
     TPZBndCond * face1 = matDarcy->CreateBC(matDarcy,bcOutletId,bc_typeD,val1,val2);
     cmesh->InsertMaterialObject(face1);
 
-
+    val2[0]=1000;
     //TODO Create comp elements of Vug Boundary
     for(int iel = 0; iel < nVugs; iel++) {
         int matid = MatBoundVug + iel;
@@ -251,6 +254,9 @@ int H1Vugs(){
     std::map<int, int64_t> primer_connect_grupo;  // {{matid, first_connect}, ...}
 
     TPZVec<int64_t> vugIndex(nVugs, -1);
+    TPZVec<int64_t> gelIndex(nels2, -1);
+    std::map<int, int> matId_connect;
+
 
     for (int64_t el = 0; el < cmesh->NElements(); el++){
 
@@ -260,9 +266,17 @@ int H1Vugs(){
 
         if (gel->Dimension() != meshDim-1) continue; // only boundary elements (Dim-1 elems)
         if (gel->MaterialId() < 100) continue; //TODO
-
         int nVug = VugId(gel->MaterialId()); //TODO Melhorar o verificador
-        int connIndex = cel->ConnectIndex(0);
+
+        int connIndex = 0;
+        auto it = matId_connect.find(gel->MaterialId()); // check if the material ID of the vug boundary already has an associated connect index
+        if(it != matId_connect.end()){ // if it has, use the same connect index for all boundaries of the same vug
+            connIndex = matId_connect.at(gel->MaterialId());
+        }
+        else{ // if it doesn't, create a new connect index and associate it with the material ID of the vug boundary
+            connIndex = cel->ConnectIndex(0);
+            matId_connect.insert({gel->MaterialId(), connIndex});
+        }
 
         if(vugIndex[nVug] == -1) vugIndex[nVug] = connIndex; // updating vugIndex to tell that the n-th vug has updated its connect to coonIndex
         
@@ -270,15 +284,15 @@ int H1Vugs(){
         int nVertex = gel->NCornerNodes();
         
         for(int side = 0; side < nVertex; side++){ // sides associated with vertices
-            TPZGeoElSide gelside(gel, side);
-            TPZStack<TPZGeoElSide> allneigh;
+            TPZGeoElSide gelside(gel, side); // node i of gel
+            TPZStack<TPZGeoElSide> allneigh; // all node neighbors of node i
             gelside.AllNeighbours(allneigh);
             int nneighs = allneigh.size();
-
+            cel->SetConnectIndex(side, connIndex);
             for(int neigh = 0; neigh < nneighs; neigh++){
                 TPZGeoElSide neighside = allneigh[neigh];
                 TPZGeoEl *gelneigh = neighside.Element();
-                if (gelneigh->MaterialId() == MatVugs) continue; //TODO Está pegando tambem o elemento do contorno vizinho, talvez esteja acontecendo retrabalho
+                if (gelneigh->MaterialId() == MatVugs) continue; // ignore neighbors that are part of the vug itself
                 TPZCompEl *celneigh = gelneigh->Reference();
                 celneigh->SetConnectIndex(neighside.Side(), connIndex);
             }
@@ -299,7 +313,8 @@ int H1Vugs(){
       
     //Inicializa el tamaño del vector solución
     cmesh->ExpandSolution();
-      
+    
+    PrintCompMesh(cmesh);
     
     //CreateAnalisys
     TPZLinearAnalysis *Analisys = new TPZLinearAnalysis(cmesh);
@@ -354,4 +369,15 @@ void findElDim(TPZStack<TPZGeoElSide> &allneigh, int dim, TPZStack<TPZGeoElSide>
 
 int VugId(int matID){
     return matID - 100; //TODO Calcular numero do vug a partir do matId dele (500 + algo)
+}
+
+void PrintCompMesh(TPZCompMesh *cmesh)
+{
+    std::cout << "\nPrinting multiphysics mesh in .txt and .vtk formats...\n";
+
+    std::ofstream VTKCompMeshFile(cmesh->Name() + ".vtk");
+    std::ofstream TextCompMeshFile(cmesh->Name() + ".txt");
+
+    TPZVTKGeoMesh::PrintCMeshVTK(cmesh, VTKCompMeshFile);
+    cmesh->Print(TextCompMeshFile);
 }

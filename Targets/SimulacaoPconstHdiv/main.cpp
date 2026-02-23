@@ -38,29 +38,36 @@
 #include "TSFMixedDarcy.h"
 #include "TPZHDivApproxCreator.h"
 //hola
-int mainDarcy2d();
-int mainDarcy3D();
-TPZCompMesh* HdivMesh(TPZGeoMesh *);
-TPZCompMesh* Pressuremesh(TPZGeoMesh *, int order);
-void GetAtomicIds(TPZGeoMesh *geomesh, std::set<int> &volId, std::set<int> &bcId);
-void insertAtomicMaterials(TPZCompMesh *cmesh, std::set<int> matIdsVol, std::set<int> matIdsBcs);
 
-//using namespace cv;
-//using namespace std;
+enum MatID{
+    EMatId = 1,
+    EVugId = 100,
+    EVugBcId = 500,
+    ELeft = 2,
+    ERight = 3,
+    ETop = 4,
+    EBottom = 5
+};
+
+TPZCompMesh *CreateCompMeshFlux(TPZGeoMesh *gmesh);
+TPZCompMesh *CreateCompMeshPressure(TPZGeoMesh *gmesh, int pOrder);
+void CreateCompMeshMP(TPZMultiphysicsCompMesh *cmesh, TPZManVector<TPZCompMesh *,2> &cmeshes);
+
+void CreateBoundaryElements(TPZGeoMesh *gmesh);
+void SetMaterialIdVug(TPZGeoMesh *gmesh);
+void SetUniqueVugConnect(TPZGeoMesh *gmesh, TPZCompMesh *cmesh);
+
 //Function to generate a mesh using gmsh library
 TPZGeoMesh* generateGMeshWithPhysTagVec(std::string& filename, TPZManVector<std::map<std::string,int>,4>& dim_name_and_physical_tagFine);
 void findElDim(TPZStack<TPZGeoElSide> &allneigh, int dim, TPZStack<TPZGeoElSide> &allneighdim);
 
+void Hdiv_MixedCT();
 
-int main3D();
-int main2D();
-int main2DFracVug();
-int mainDarcy3D ();
+int main (){
 
-//int main(){
-//
-//    return mainDarcy3D();
-//}
+    Hdiv_MixedCT();
+    return 0;
+}
 
 
 TPZGeoMesh* generateGMeshWithPhysTagVec(std::string& filename, TPZManVector<std::map<std::string,int>,4>& dim_name_and_physical_tagFine){
@@ -77,159 +84,504 @@ TPZGeoMesh* generateGMeshWithPhysTagVec(std::string& filename, TPZManVector<std:
     return gmeshFine;
 }
 
-int main2DFracVug(){
-      TPZGeoMesh *gmesh = new TPZGeoMesh;
-      TPZManVector<std::map<std::string,int>,4> dim_name_and_physical_tagCoarse(4);
-      dim_name_and_physical_tagCoarse[2]["k11"] = 1;
-      //dim_name_and_physical_tagCoarse[2]["SmallVug"] = 7;
-      //dim_name_and_physical_tagCoarse[2]["BigVug"] = 8;
-      dim_name_and_physical_tagCoarse[2]["Vugs"] = 6;
-      dim_name_and_physical_tagCoarse[1]["inlet"] = 2;
-      dim_name_and_physical_tagCoarse[1]["outlet"] = 3;
-      dim_name_and_physical_tagCoarse[1]["noflux"] = 4;
-      //dim_name_and_physical_tagCoarse[1]["SmallFract"] = 5;
-      //dim_name_and_physical_tagCoarse[1]["BigFract"] = 6;
+void CreateBoundaryElements(TPZGeoMesh *gmesh, TPZVec<int64_t> &els_cont1d){
 
+    int nels = gmesh->NElements();
+    int nElVugBound = 0;
+    int nVug = 0; 
 
-      
-      //std::string filename="/Users/victorvillegassalabarria/python-test/testskel4.msh";
-      //std::string filename="/Users/victorvillegassalabarria/python-test/testskel30sp.msh";
-      std::string filename="/Users/victorvillegassalabarria/python-test/testskelSLICE77SP.msh";
+    for (int iel = 0; iel< nels; iel++) {
+        TPZGeoEl *gel = gmesh->Element(iel);
+        if (!gel){
+            continue;
+        }
+        if (gel->Dimension() != 2) {
+            continue;
+        }
+        int nsides= gel->NSides();
+        int ncorners= gel->NCornerNodes();
+        int firstside= nsides-ncorners-1;
 
-      gmesh = generateGMeshWithPhysTagVec(filename, dim_name_and_physical_tagCoarse);
-     
-      std::ofstream file3("TestGeoMesh2Dskel.vtk");
-      TPZVTKGeoMesh::PrintGMeshVTK(gmesh, file3);
-      //Create CompMesh
-      TPZCompMesh *cmesh =  new TPZCompMesh(gmesh);
+        for (int iside = firstside; iside<nsides; iside++) {
+            TPZGeoElSide gelside(gel, iside);
+            int matid = gelside.Element()->MaterialId();
+            TPZStack<TPZGeoElSide> allneigh;
+            gelside.AllNeighbours(allneigh);
+            int nneighs = allneigh.size();
+            //verify Dimension
+            int verify =0;
+
+            for (int ineigh=0; ineigh<nneighs; ineigh++) {
+                TPZGeoEl *gelneigh = allneigh[ineigh].Element();
+                int dimen = gelneigh->Dimension();
+
+                if (dimen == 1) {
+                    verify = 1;
+                }
+            }
+            if(verify == 1){
+                continue;
+            }
+
+            for (int ineigh=0; ineigh<nneighs; ineigh++) {
+                TPZGeoEl *gelneigh = allneigh[ineigh].Element();
+                int matNeigh = gelneigh->MaterialId();
+                if (matNeigh != matid && (gel->Dimension() == gelneigh->Dimension()) ) {
+                    gelside.Element()->CreateBCGeoEl(iside, EVugBcId);
+                    nElVugBound++;
+                }
+            }
+        }
+    }
+
+    std::cout<< "Created " << nElVugBound << " boundary elements." << std::endl;
+
+    gmesh->BuildConnectivity();
+    int nels2 = gmesh->NElements();
+    //TPZVec<int64_t> els_cont1d(nels2,-1); // vector to store the mat ids of the 1d elements (contours), the rest will be -1
+    TPZVec<int> verificador(nels2, 0);
+    int mat = EVugBcId; 
+
+    for (int iel =nels-1; iel<nels2; iel++) {
+
+        TPZGeoEl * gel = gmesh->Element(iel);
+        if (gel->MaterialId() == EVugBcId) {
+            std::cout<<"ok "<<std::endl;
+        }
+        if (!gel) {
+            continue;
+        }
+        if (gel->Dimension() != 1) {
+            continue;
+        }
+        if (verificador[iel]==1) {
+            continue;
+        }
+        if (gel->MaterialId() != EVugBcId) {
+            continue;
+        }
+        int side = 1;
+
+        TPZGeoElSide gelside(gel, side);
+        TPZStack<TPZGeoElSide> allneigh;
+        gelside.AllNeighbours(allneigh);
+        TPZStack<TPZGeoElSide> allneighdim;
+        findElDim(allneigh, 1, allneighdim);
+        int ntest = allneighdim.size();
+        TPZGeoElSide gelneigh = allneighdim[0];
+        gel->SetMaterialId(mat);
+        els_cont1d[iel]=mat; 
+        while (gel != gelneigh.Element()) {
+            TPZStack<TPZGeoElSide> allneigh;
+            int sidetest = gelneigh.Side();
+            if (sidetest==0) {
+                gelneigh.SetSide(1);
+            }
+            else{
+                gelneigh.SetSide(0);
+            }
+            gelneigh.AllNeighbours(allneigh);
+            TPZStack<TPZGeoElSide> allneighdim;
+            findElDim(allneigh, 1, allneighdim);
+            int indexneig = gelneigh.Element()->Index();
+            verificador[indexneig] =1;
+            gelneigh.Element()->SetMaterialId(mat);
+            els_cont1d[indexneig]=mat; 
+            gelneigh =allneighdim[0];
+        }
+        nVug++; //TODO Based on the fact that each vug has its unique boundary
+        mat++;
+        int ok=0;
+    }
+}
+
+void SetUniqueVugConnect(TPZGeoMesh *gmesh, TPZCompMesh *cmesh){
     
-        //Create Materials
-        int matId=1;
-        int dim2d = 2;
-        int matIdsmallFract=2;
-        int matIBigFract=2;
-        int dim1d=1;
-    
-        TPZDarcyFlow *matDarcy = new TPZDarcyFlow(matId, dim2d);
-//        TPZDarcyFlow *matDarcySmallFract= new TPZDarcyFlow(5,dim1d);
-        //TPZDarcyFlow *matDarcyBigFract= new TPZDarcyFlow(6,dim1d);
-        //TPZDarcyFlow *matDarcySmallVug= new TPZDarcyFlow(7,dim2d);
-        TPZDarcyFlow *matDarcySmallVug= new TPZDarcyFlow(6,dim2d);
-        //TPZDarcyFlow *matDarcyBigVug= new TPZDarcyFlow(8,dim2d);
-    
-        matDarcy->SetConstantPermeability(0.01);
-        matDarcySmallVug->SetConstantPermeability(1e9);
-        //matDarcyBigVug->SetConstantPermeability(1.0e9);
-//        matDarcySmallFract->SetConstantPermeability(1e9);
-        //matDarcyBigFract->SetConstantPermeability(1.0e9);
-    int x, y;
+    int nels = gmesh->NElements();
+    //TPZVec<int64_t> vugIndex(nVugs, -1);
+    TPZVec<int64_t> gelIndex(nels, -1);
+    std::map<int, int> matId_connect;
 
-//    // Definir una función de permeabilidad como una lambda
-//    PermeabilityFunctionType perm_function = [](const TPZVec<REAL>& coord) -> STATE {
-//        if (coord[0]>100 and coord[1]>100){
-//            return 1000;
-//        }
-//        else{
-//            return 1;
-//
-//        };
-//    };
-    PermeabilityFunctionType perm_function = [](const TPZVec<REAL>& coord) -> STATE {
-        REAL x = coord[0];
-        REAL y = coord[1];
-        REAL arg = 2 * M_PI * x + 2 * M_PI * y;
-        REAL cos_arg = cos(arg);
-        REAL exp_term = exp(2.3 * cos_arg);
-        
-        return exp_term;
-    };
-//        // Ejemplo: Permeabilidad depende de x (coord[0])
-//        return coord[0] * 1e-3;
-//
-//
-    //matDarcy->SetPermeabilityFunction(perm_function);
-    //Conseguir permeabilidade em um ponto da malha coord(x,y);
-    
-    TPZVec<REAL> coord(2);
-    coord[0]=90.5;
-    coord[1]=650;
-    auto Perm=matDarcy->GetPermeability(coord);
-    std::cout<<Perm<<std::endl;
-    //Conseguir permeabilidade em um ponto da malha coord(x,y);
-    cmesh->InsertMaterialObject(matDarcy);
-        int bc_id=2;
-        int bc_typeN = 1;
-        int bc_typeD = 0;
-        TPZFMatrix<STATE> val1(1,1,0.0);
-        TPZVec<STATE> val2(1,0.0);
-        
-        int bcinletId = 2;
-        int bcOutletId = 3;
-        int bcNoFlux = 4;
-        TPZBndCond * face2 = matDarcy->CreateBC(matDarcy,bcNoFlux,bc_typeN,val1,val2);
-        cmesh->InsertMaterialObject(face2);
-        
-        val2[0]=100; // Valor a ser impuesto como presión en la entrada
-        TPZBndCond * face = matDarcy->CreateBC(matDarcy,bcinletId,bc_typeD,val1,val2);
-        cmesh->InsertMaterialObject(face);
-        
-        val2[0]=10; // Valor a ser impuesto como presión en la salida
-        TPZBndCond * face1 = matDarcy->CreateBC(matDarcy,bcOutletId,bc_typeD,val1,val2);
-        cmesh->InsertMaterialObject(face1);
-        //cmesh->InsertMaterialObject(matDarcySmallFract);
-        //cmesh->InsertMaterialObject(matDarcyBigFract);
-        cmesh->InsertMaterialObject(matDarcySmallVug);
-        //cmesh->InsertMaterialObject(matDarcyBigVug);
-       
-        cmesh->AutoBuild();
-        //Esto hace que el espacio de aproxiación sea H1
-        cmesh->ApproxSpace().SetAllCreateFunctionsContinuous();
-        
-        //Inicializa el tamaño del vector solución
-        cmesh->ExpandSolution();
-        
-      
-        //CreateAnalisys
-        TPZLinearAnalysis *Analisys = new TPZLinearAnalysis(cmesh);
-        bool mustOptimizeBandwidth = false;
-       
-        //Carga la solución a la malla computacional
-        Analisys->LoadSolution();
-        
-       // Selecciona el método numérico para resolver el problema algebraico
-        TPZStepSolver<STATE> step;
-        
-    //    TPZSSpStructMatrix<STATE> matrix(cmesh);
-        step.SetDirect(ELDLt);
-      
-    //    Analisys->SetStructuralMatrix(matrix);
-        
+    for (int64_t el = 0; el < cmesh->NElements(); el++){
 
-        Analisys->SetSolver(step);
-        
-        //Ensamblaje de la matriz de rigidez y vector de carga
-        Analisys->Assemble();
+        TPZCompEl *cel = cmesh->Element(el);
+        TPZGeoEl *gel = cel->Reference();
+        int meshDim = gmesh->Dimension();
 
-        //Resolución del sistema algebraico
-        Analisys->Solve();
+        if (gel->Dimension() != meshDim-1) continue; // only boundary elements (Dim-1 elems)
+        if (gel->MaterialId() < EVugBcId) continue; 
+        //int nVug = VugId(gel->MaterialId()); //TODO Melhorar o verificador
 
-        //Definición de variables escalares y vectoriales a posprocesar
-        TPZStack<std::string,10> scalnames, vecnames;
-        vecnames.Push("Flux");
-        scalnames.Push("Pressure");
+        int connIndex = 0;
+        auto it = matId_connect.find(gel->MaterialId()); // check if the material ID of the vug boundary already has an associated connect index
+        if(it != matId_connect.end()){ // if it has, use the same connect index for all boundaries of the same vug
+            connIndex = matId_connect.at(gel->MaterialId());
+        }
+        else{ // if it doesn't, create a new connect index and associate it with the material ID of the vug boundary
+            connIndex = cel->ConnectIndex(0);
+            matId_connect.insert({gel->MaterialId(), connIndex});
+        }
+
+        //if(vugIndex[nVug] == -1) vugIndex[nVug] = connIndex; // updating vugIndex to tell that the n-th vug has updated its connect to coonIndex
         
-        //Configuración del posprocesamiento
-        int ref =0; // Permite refinar la malla con la solucion obtenida
-        std::string file_reservoir("Darcy_H1.vtk");
-        Analisys->DefineGraphMesh(dim2d,scalnames,vecnames,file_reservoir);
-        //Posprocesamiento
-        Analisys->PostProcess(ref, dim2d);
-     
-        return 0;
+        int nsides = gel->NSides();
+        int nVertex = gel->NCornerNodes();
+        
+        for(int side = 0; side < nVertex; side++){ // sides associated with vertices
+            TPZGeoElSide gelside(gel, side); // node i of gel
+            TPZStack<TPZGeoElSide> allneigh; // all node neighbors of node i
+            gelside.AllNeighbours(allneigh);
+            int nneighs = allneigh.size();
+            cel->SetConnectIndex(side, connIndex);
+            for(int neigh = 0; neigh < nneighs; neigh++){
+                TPZGeoElSide neighside = allneigh[neigh];
+                TPZGeoEl *gelneigh = neighside.Element();
+                if (gelneigh->MaterialId() == EVugId) continue; // ignore neighbors that are part of the vug itself
+                TPZCompEl *celneigh = gelneigh->Reference();
+                celneigh->SetConnectIndex(neighside.Side(), connIndex);
+            }
+        }
+    }
+
+    //for(int vug = 0; vug < nVugs; vug++){
+    //    int connIndex = vugIndex[vug];
+    //   if(connIndex == -1) std::cout << "PROBLEM: ConnectID not set for Vug " << vug << std::endl;
+    //    else std::cout << "ConnectID: " << connIndex << std::endl;
+    //}
+}
+
+void SetMaterialIdVug(TPZGeoMesh *gmesh, TPZVec<int64_t> &els_cont1d){
+
+    TPZVec<int64_t> AllVugsEls2d; 
+    int nels = gmesh->NElements();
+    // GROUP ALL 2D ELEMENTS OF VUGS (MATID=6) IN AllVugsEls2d
+    for(int ind=0;ind<nels;ind++){ 
+        TPZGeoEl *gEl=gmesh->Element(ind);
+        if (!gEl) {
+            continue;
+        }
+        if (gEl->Dimension() != 2) {
+            continue;
+        }
+        if(gEl->MaterialId()!=EVugId){
+            continue;
+        }
+        AllVugsEls2d.push_back(ind); // store the index of the element if it has matid=6 (Vugs)
+    }
+    std::cout<<"All vugs 2D size: "<<AllVugsEls2d.size()<<std::endl;
+    int ElVugs_identified=0;
+
+    // Identifies 2D vug elements (void/cavity elements) that lie on boundaries by detecting which 
+    // ones have 1D neighbor elements, then assigns them material IDs (+500) that correspond to their associated boundary contour groups.
+    for(int ind=0;ind<AllVugsEls2d.size();ind++){ // loop over all 2D vug elements
+        TPZGeoEl *gEl=gmesh->Element(AllVugsEls2d[ind]);
+        if (!gEl) {
+            continue;
+        }
+        if (els_cont1d[AllVugsEls2d[ind]]!=-1) {  
+            continue;
+        }
+        int sides=gEl->NSides();  // return the number of connectivities of the element, which is the number of sides
+        for(int side = 3; side < sides; side++) {  // triangular elements, skips the corners side.
+            TPZGeoElSide gelside(gEl, side);
+            TPZStack<TPZGeoElSide> allneigh;
+            gelside.AllNeighbours(allneigh);
+            TPZStack<TPZGeoElSide> allneighdim, allneighdim2D;
+            findElDim(allneigh, 1, allneighdim); // Find 1D neighbors of the current side and store them in allneighdim
+            findElDim(allneigh, 2, allneighdim2D); // Find 2D neighbors and store them in allneighdim2D
+
+            if(allneighdim.NElements()>0){ // it indicates this side (edge) touches a 1D boundary element.
+                TPZGeoElSide gelneigh = allneighdim[0]; // Get the first 1D neighbor (should be only one since it's a boundary)
+                auto matid1=gelneigh.Element()->MaterialId();
+                std::cout << "  Lado " << side << " → Elemento " << AllVugsEls2d[ind]
+                          << " (matID=" << matid1 << ")" << std::endl;
+                gEl->SetMaterialId(EVugId+matid1); // Assign a new material ID to the 2D vug element based on the material ID of the neighboring 1D boundary element.
+                els_cont1d[AllVugsEls2d[ind]] = EVugId+matid1;  // Fix: índice real
+                ElVugs_identified++;
+                break;  // Solo un contorno por elemento
+            }
+        }
+    }
+
+    // Propagates boundary contour assignments from already-identified 2D vug elements 
+    // to their unassigned neighbors through an iterative flood-fill process, ensuring 
+    // all connected vug elements within the same cavity receive matching material IDs.
+    bool expanded = true;
+    while(expanded) {
+        expanded = false;
+        for(int ind=0; ind<AllVugsEls2d.size(); ind++) { 
+            int64_t elIdx = AllVugsEls2d[ind]; 
+            if(els_cont1d[elIdx] != -1) continue; // only process unassigned 2D vug elements
+            
+            TPZGeoEl *gEl = gmesh->Element(elIdx); 
+            int sides = gEl->NSides();
+            for(int side=3; side<sides; side++) { 
+                TPZGeoElSide gelside(gEl, side); 
+                TPZStack<TPZGeoElSide> allneigh;
+                gelside.AllNeighbours(allneigh); 
+                TPZStack<TPZGeoElSide> neigh2D;
+                findElDim(allneigh, 2, neigh2D); 
+                
+                for(int n=0; n<neigh2D.NElements(); n++) { 
+                    int64_t nidx = neigh2D[n].Element()->Index(); 
+                    if(els_cont1d[nidx] > EVugId) { 
+                        els_cont1d[elIdx] = els_cont1d[nidx];  
+                        gEl->SetMaterialId(els_cont1d[elIdx]); 
+                        ElVugs_identified++;
+                        expanded = true;
+                        break; // assign the same contour ID as the neighbor and mark as expanded
+                    }
+                }
+                if(expanded) break; // If the element was assigned a contour ID, do not process other sides
+            if(expanded) break;
+            }
+        }
+    }
+
+    std::cout << "TOTAL ElVugs_identified: " << ElVugs_identified << std::endl;
 }
 
 
-    //devuelve una malla L2
+void Hdiv_MixedCT(){
+    
+    TPZGeoMesh *gmesh = new TPZGeoMesh;
+    TPZManVector<std::map<std::string,int>,4> dim_name_and_physical_tagCoarse(4);
+    dim_name_and_physical_tagCoarse[2]["k11"] = EMatId;
+    dim_name_and_physical_tagCoarse[1]["inlet"] = 2;
+    dim_name_and_physical_tagCoarse[1]["outlet"] = 3;
+    dim_name_and_physical_tagCoarse[1]["noflux"] = 4;
+    dim_name_and_physical_tagCoarse[2]["Vugs"] = EVugId;
+
+    
+    //std::string filename="/home/marina/programming/Stokes-Darcy-Research/VUGS/testskelSLICE77SP.msh";
+    std::string filename="/home/marina/programming/Stokes-Darcy-Research/VUGS/FastMesh.msh";
+    //std::string filename="/home/itopo/Stokes-Darcy_Research/Vugs/testskelSLICE77SP.msh";
+
+    gmesh = generateGMeshWithPhysTagVec(filename, dim_name_and_physical_tagCoarse);
+
+    
+    std::ofstream file20("TestGeoMesh2D.vtk");
+    TPZVTKGeoMesh::PrintGMeshVTK(gmesh, file20);
+    
+    
+    int order =1;
+    TPZHDivApproxCreator hdivCreator(gmesh);
+    hdivCreator.ProbType() = ProblemType::EDarcy;
+    hdivCreator.SetDefaultOrder(order);
+    hdivCreator.SetShouldCondense(false);
+    
+    
+    // Add materials (weak formulation)
+    TPZMixedDarcyFlow *matDarcy = new TPZMixedDarcyFlow(1,2);
+    TPZMixedDarcyFlow *matDarcyVugs= new TPZMixedDarcyFlow(6,2);
+
+    matDarcy->SetConstantPermeability(0.01);
+    hdivCreator.InsertMaterialObject(matDarcy);
+    
+    matDarcyVugs->SetConstantPermeability(1e9);
+
+
+    hdivCreator.InsertMaterialObject(matDarcyVugs);
+    
+    int bc_id=2;
+    int bc_typeN = 1;
+    int bc_typeD = 0;
+    TPZFMatrix<STATE> val1(1,1,0.0);
+    TPZVec<STATE> val2(1,0.0);
+    
+    int bcinletId = 2;
+    int bcOutletId = 3;
+    int bcNoFlux = 4;
+
+    TPZBndCond * face2 = matDarcy->CreateBC(matDarcy,bcNoFlux,bc_typeN,val1,val2);
+
+    hdivCreator.InsertMaterialObject(face2);
+
+    
+    val2[0]=100; // Valor a ser impuesto como presión en la entrada
+    TPZBndCond * face = matDarcy->CreateBC(matDarcy,bcinletId,bc_typeD,val1,val2);
+
+    hdivCreator.InsertMaterialObject(face);
+
+    val2[0]=14; // Valor a ser impuesto como presión en la salida
+    TPZBndCond * face1 = matDarcy->CreateBC(matDarcy,bcOutletId,bc_typeD,val1,val2);
+
+    hdivCreator.InsertMaterialObject(face1);
+
+    
+    int lagmultilevel = 1;
+    TPZManVector<TPZCompMesh *, 7> meshvec(2);
+
+    hdivCreator.CreateAtomicMeshes(meshvec, lagmultilevel); // This method increments the lagmultilevel
+    TPZMultiphysicsCompMesh *cmesh = nullptr;
+
+    hdivCreator.CreateMultiPhysicsMesh(meshvec, lagmultilevel, cmesh);
+
+    cmesh->Reference()->ResetReference();
+    cmesh->LoadReferences();
+
+    for (int iel = 0; iel < cmesh->NElements(); iel++) {
+        auto cel = cmesh->Element(iel);
+        if (!cel) continue;
+
+        if (cel->Material()->Id() == 3) {
+            std::cout << "BC element with ndof = "
+                      << cel->NConnects() << std::endl;
+        }
+    }
+
+    TPZLinearAnalysis anMixed(cmesh, RenumType::EMetis);
+  #ifdef PZ_USING_MKL
+    TPZSSpStructMatrix<STATE> matMixed(cmesh);
+  #else
+    TPZFStructMatrix<STATE> matMixed(cmesh);
+  #endif
+    matMixed.SetNumThreads(0);
+    anMixed.SetStructuralMatrix(matMixed);
+    TPZStepSolver<STATE> stepMixed;
+    stepMixed.SetDirect(ELDLt);
+    anMixed.SetSolver(stepMixed);
+    anMixed.Run();
+
+    // ---- Plotting ---
+
+    {
+      const std::string plotfile = "darcy_mixed";
+      constexpr int vtkRes{0};
+      TPZManVector<std::string, 2> fields = {"Flux", "Pressure"};
+      auto vtk = TPZVTKGenerator(cmesh, fields, plotfile, vtkRes);
+      vtk.Do();
+    }
+
+    // --- Clean up ---
+    delete cmesh;
+}
+
+
+
+void findElDim(TPZStack<TPZGeoElSide> &allneigh, int dim, TPZStack<TPZGeoElSide> &allneighdim){
+    int nels = allneigh.size();
+    for (int iel =0; iel<nels; iel++) {
+        if (allneigh[iel].Element()->Dimension()==dim) {
+            allneighdim.push_back(allneigh[iel]);
+        }
+    }
+}
+
+
+TPZCompMesh *HdivMesh(TPZGeoMesh *gmesh){
+    int matId=1;
+    int dim2d = 2;
+    TPZCompMesh *cmesh = new TPZCompMesh(gmesh);
+ 
+    std::set<int> volId, bcId;
+    GetAtomicIds(gmesh, volId, bcId);
+    insertAtomicMaterials(cmesh, volId, bcId);
+    
+    //int pOrder=1;
+    int pOrder=1;
+    cmesh->SetDefaultOrder(pOrder);
+    int meshdim = gmesh->Dimension();
+
+    cmesh->ApproxSpace().SetAllCreateFunctionsHDiv(meshdim);
+    cmesh->AutoBuild();
+    cmesh->InitializeBlock();
+    std::cout<<cmesh->NEquations() <<std::endl;
+    return cmesh;
+}
+
+
+TPZCompMesh* CreateCompMeshV(TPZGeoMesh *gmesh){
+    
+    TPZCompMesh *cmesh_v = new TPZCompMesh(gmesh);
+
+    //cmesh_v->ApproxSpace().SetHDivFamily(HDivFamily::EHDivStandard);
+    cmesh_v->SetAllCreateFunctionsHDiv();
+
+    TPZNullMaterial<STATE> *nullMat = new TPZNullMaterial(matID_flux, gmesh->Dimension());  
+    cmesh_v->InsertMaterialObject(nullMat);
+
+
+
+    return cmesh_v;
+}
+
+TPZCompMesh *CreateCompMeshP(TPZGeoMesh *gmesh,int order){
+    TPZCompMesh *cmesh_p = new TPZCompMesh(gmesh);
+    std::set<int> volId, bcId;
+    GetAtomicIds(gmesh, volId, bcId);
+    insertAtomicMaterials(cmesh, volId, bcId);
+
+    cmesh->AutoBuild();
+    
+    if(order>0){
+        cmesh->ApproxSpace().SetAllCreateFunctionsContinuous();
+        cmesh->ApproxSpace().CreateDisconnectedElements(true);
+    }
+    else {
+        cmesh->ApproxSpace().SetAllCreateFunctionsDiscontinuous();
+        cmesh->ApproxSpace().CreateDisconnectedElements(true);
+    }
+    
+    // if(1 > 0){ //? What?
+    //        int64_t ncon = cmesh->NConnects();
+    //        for(int64_t i=0; i<ncon; i++){
+    //            TPZConnect &newnod = cmesh->ConnectVec()[i];
+    //            newnod.SetLagrangeMultiplier(1);
+    //        }
+    //    }
+    
+    
+    cmesh->SetDefaultOrder(order);
+
+    TPZNullMaterial<STATE> *nullMat = new TPZNullMaterial(matID_pressure, gmesh->Dimension());  
+    cmesh_p->InsertMaterialObject(nullMat);
+
+    cmesh->AutoBuild();
+    cmesh->InitializeBlock();
+    
+    return cmesh;
+}
+
+void insertAtomicMaterials(TPZCompMesh *cmesh, std::set<int> matIdsVol, std::set<int> matIdsBcs){
+    
+    int dim = cmesh->Dimension();
+    
+    for (auto iD:matIdsVol) {
+        TPZNullMaterial <STATE> *matDarcy = new TPZNullMaterial(iD, dim);
+        cmesh->InsertMaterialObject(matDarcy);
+      
+    }
+    for (auto iD:matIdsBcs) {
+        
+        TPZNullMaterial<STATE> * face2 = new TPZNullMaterial(iD, dim-1);
+        cmesh->InsertMaterialObject(face2);
+
+    }
+}
+
+
+
+void GetAtomicIds(TPZGeoMesh *geomesh, std::set<int> &volId, std::set<int> &bcId){
+    int dim = geomesh->Dimension();
+    for (auto gel: geomesh->ElementVec()) {
+        if (! gel) {
+            continue;
+        }
+        int matId = gel->MaterialId();
+        int geldim = gel->Dimension();
+        if (geldim == dim) {
+            volId.insert(matId);
+        }
+        if (geldim == dim-1) {
+            bcId.insert(matId);
+        }
+    }
+    
+    
+}
+
+
 
 int main (){
     //main2DFracVug();

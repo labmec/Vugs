@@ -348,7 +348,8 @@ void H1Vugs(){
     dim_name_and_physical_tagCoarse[1]["noflux"] = EbcNoFlux;
 
 
-    std::string filename="/home/marina/programming/Stokes-Darcy-Research/VUGS/testskelSLICE77SP.msh";
+    //std::string filename="/home/marina/programming/Stokes-Darcy-Research/VUGS/testskelSLICE77SP.msh";
+    std::string filename="/home/marina/programming/Stokes-Darcy-Research/VUGS/FewVugsMesh.msh";
     //std::string filename="/home/marina/programming/Stokes-Darcy-Research/VUGS/FastMesh.msh";
     //std::string filename="/home/itopo/Stokes-Darcy_Research/Vugs/testskelSLICE77SP.msh";
 
@@ -395,7 +396,7 @@ void H1Vugs(){
     TPZBndCond * face1 = matDarcy->CreateBC(matDarcy,EbcOutletId,bc_typeD,val1,val2);
     cmesh->InsertMaterialObject(face1);
 
-    val2[0]=1;
+    val2[0]=500;
     //TODO Create comp elements of Vug Boundary
     for(int iel = 0; iel < nVugs; iel++) {
         int matid = EVugBcId + iel;
@@ -453,7 +454,7 @@ void H1Vugs(){
     int ref = 0; 
     std::string file_reservoir("Darcy_H1.vtk");
     std::string file_shape("Shape.vtk");
-    Analisys->ShowShape(file_shape,);
+    //Analisys->ShowShape(file_shape,);
     Analisys->DefineGraphMesh(dim2d,scalnames,vecnames,file_reservoir);
     
     Analisys->PostProcess(ref, dim2d);

@@ -253,7 +253,7 @@ void SetUniqueVugConnect(TPZGeoMesh *gmesh, TPZCompMesh *cmesh){
             TPZStack<TPZGeoElSide> allneigh; // all node neighbors of node i
             gelside.AllNeighbours(allneigh);
             int nneighs = allneigh.size();
-            cel->SetConnectIndex(side, connIndex);
+            //cel->SetConnectIndex(side, connIndex);
             for(int neigh = 0; neigh < nneighs; neigh++){
                 TPZGeoElSide neighside = allneigh[neigh];
                 TPZGeoEl *gelneigh = neighside.Element();
@@ -420,7 +420,7 @@ void H1Vugs(){
     TPZBndCond * face1 = matDarcy->CreateBC(matDarcy,EbcOutletId,bc_typeD,val1,val2);
     cmesh->InsertMaterialObject(face1);
 
-    val2[0]=500;
+    val2[0]=1000;
     //TODO Create comp elements of Vug Boundary
     for(int iel = 0; iel < nVugs; iel++) {
         int matid = EVugBcId + iel;
@@ -499,7 +499,8 @@ void H1Vugs(){
     int ref = 0; 
     std::string file_reservoir("Darcy_H1.vtk");
     std::string file_shape("Shape.vtk");
-    //Analisys->ShowShape(file_shape,);
+    //TPZVec<int64_t> equationindices (1,1); // indices of the equations to be postprocessed
+    //Analisys->ShowShape(file_shape, equationindices); //TODO Verify if this is the correct way to show shape functions
     Analisys->DefineGraphMesh(dim2d,scalnames,vecnames,file_reservoir);
     
     Analisys->PostProcess(ref, dim2d);

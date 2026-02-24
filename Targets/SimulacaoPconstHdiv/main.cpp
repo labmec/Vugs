@@ -43,10 +43,12 @@ enum MatID{
     EMatId = 1,
     EVugId = 100,
     EVugBcId = 500,
-    ELeft = 2,
-    ERight = 3,
-    ETop = 4,
-    EBottom = 5
+    EbcInletId = 2,
+    EbcOutletId = 3,
+    EbcNoFlux = 4,
+    ELagrange = 5,
+    EInterfaceL = 6,
+    EInterfaceR = 7
 };
 
 TPZCompMesh *CreateCompMeshFlux(TPZGeoMesh *gmesh);
@@ -54,6 +56,7 @@ TPZCompMesh *CreateCompMeshPressure(TPZGeoMesh *gmesh, int pOrder);
 void CreateCompMeshMP(TPZMultiphysicsCompMesh *cmesh, TPZManVector<TPZCompMesh *,2> &cmeshes);
 
 void CreateBoundaryElements(TPZGeoMesh *gmesh);
+void CreateInterfaceElements(TPZGeoMesh *gmesh);
 void SetMaterialIdVug(TPZGeoMesh *gmesh);
 void SetUniqueVugConnect(TPZGeoMesh *gmesh, TPZCompMesh *cmesh);
 
@@ -63,12 +66,13 @@ void findElDim(TPZStack<TPZGeoElSide> &allneigh, int dim, TPZStack<TPZGeoElSide>
 
 void Hdiv_MixedCT();
 
+//---------------------------MAIN-----------------------------------
 int main (){
 
     Hdiv_MixedCT();
     return 0;
 }
-
+//-------------------------------------------------------------------
 
 TPZGeoMesh* generateGMeshWithPhysTagVec(std::string& filename, TPZManVector<std::map<std::string,int>,4>& dim_name_and_physical_tagFine){
             
@@ -341,19 +345,46 @@ void SetMaterialIdVug(TPZGeoMesh *gmesh, TPZVec<int64_t> &els_cont1d){
     std::cout << "TOTAL ElVugs_identified: " << ElVugs_identified << std::endl;
 }
 
+void CreateInterfaceElements(TPZGeoMesh *gmesh){
+    //TODO Create Interface Geo Els
+
+    //TODO Create Lagrange Geo Els
+
+    
+    int nel = gmesh->NElements();
+    //Loop over elements
+    TPZGeoEl *gel = gmesh->Element(iel);
+    //Skip elements that are not domain elements
+
+    //Loop over dim-1 sides (edges or faces)
+    TPZGeoElSide gelside(gel, side);
+
+    //If
+    TPZGeoElBC gelsideWrap(gelside, EWrap);
+    TPZGeoElBC gelsideIntR(gelsideWrap, EInterfaceR);
+    if(!gelside.HasNeighbour(gBCIds)) {
+        TPZGeoElBC gelsideLag(gelsideIntL, ELagrange);
+    }   
+    TPZGeoElBC gelsideWrap(gelside, EWrap);
+    TPZGeoElBC gelsideIntR(gelsideWrap, EInterfaceR);
+
+    //Verify !gelside.HasNeighbour(ELagrange) && !gelside.HasNeighbour(gBCIds)) DebugStop()
+
+}
 
 void Hdiv_MixedCT(){
     
     TPZGeoMesh *gmesh = new TPZGeoMesh;
     TPZManVector<std::map<std::string,int>,4> dim_name_and_physical_tagCoarse(4);
     dim_name_and_physical_tagCoarse[2]["k11"] = EMatId;
-    dim_name_and_physical_tagCoarse[1]["inlet"] = 2;
-    dim_name_and_physical_tagCoarse[1]["outlet"] = 3;
-    dim_name_and_physical_tagCoarse[1]["noflux"] = 4;
     dim_name_and_physical_tagCoarse[2]["Vugs"] = EVugId;
+    dim_name_and_physical_tagCoarse[1]["inlet"] = EbcInletId;
+    dim_name_and_physical_tagCoarse[1]["outlet"] = EbcOutletId;
+    dim_name_and_physical_tagCoarse[1]["noflux"] = EbcNoFlux;
 
     
     //std::string filename="/home/marina/programming/Stokes-Darcy-Research/VUGS/testskelSLICE77SP.msh";
+    //std::string filename="/home/marina/programming/Stokes-Darcy-Research/VUGS/FewVugsMesh.msh";
     std::string filename="/home/marina/programming/Stokes-Darcy-Research/VUGS/FastMesh.msh";
     //std::string filename="/home/itopo/Stokes-Darcy_Research/Vugs/testskelSLICE77SP.msh";
 

@@ -380,8 +380,9 @@ void MeshWithSegmentVugs(TPZGeoMesh *gmesh ){
 }
 
 void SetUniqueVugConnect(TPZGeoMesh *gmesh, TPZCompMesh *cmesh){
-    int EVugBcId=500;
-    int EVugId=100;
+    int EVugId = 500;
+    int EVugBcId = 100;
+
     int nels = gmesh->NElements();
     //TPZVec<int64_t> vugIndex(nVugs, -1);
     TPZVec<int64_t> gelIndex(nels, -1);
@@ -393,21 +394,18 @@ void SetUniqueVugConnect(TPZGeoMesh *gmesh, TPZCompMesh *cmesh){
         TPZGeoEl *gel = cel->Reference();
         int meshDim = gmesh->Dimension();
 
-        if (gel->Dimension() != meshDim-1) continue; // only boundary elements (Dim-1 elems)
-        if (gel->MaterialId() < EVugBcId) continue;
-        //int nVug = VugId(gel->MaterialId()); //TODO Melhorar o verificador
+        //if (gel->Dimension() != meshDim-1) continue; // only boundary elements (Dim-1 elems)
+        if (gel->MaterialId() < EVugId) continue;  
 
         int connIndex = 0;
-        auto it = matId_connect.find(gel->MaterialId()); // check if the material ID of the vug boundary already has an associated connect index
-        if(it != matId_connect.end()){ // if it has, use the same connect index for all boundaries of the same vug
+        auto it = matId_connect.find(gel->MaterialId()); // check if the material ID of the vug already has an associated connect index
+        if(it != matId_connect.end()){ // if it has, use the same connect index for all vug elements
             connIndex = matId_connect.at(gel->MaterialId());
         }
-        else{ // if it doesn't, create a new connect index and associate it with the material ID of the vug boundary
+        else{ // if it doesn't, create a new connect index and associate it with the material ID of the vug 
             connIndex = cel->ConnectIndex(0);
             matId_connect.insert({gel->MaterialId(), connIndex});
         }
-
-        //if(vugIndex[nVug] == -1) vugIndex[nVug] = connIndex; // updating vugIndex to tell that the n-th vug has updated its connect to coonIndex
         
         int nsides = gel->NSides();
         int nVertex = gel->NCornerNodes();
@@ -417,23 +415,18 @@ void SetUniqueVugConnect(TPZGeoMesh *gmesh, TPZCompMesh *cmesh){
             TPZStack<TPZGeoElSide> allneigh; // all node neighbors of node i
             gelside.AllNeighbours(allneigh);
             int nneighs = allneigh.size();
-            //cel->SetConnectIndex(side, connIndex);
+            cel->SetConnectIndex(side, connIndex);
             for(int neigh = 0; neigh < nneighs; neigh++){
                 TPZGeoElSide neighside = allneigh[neigh];
                 TPZGeoEl *gelneigh = neighside.Element();
-                if (gelneigh->MaterialId() == EVugId) continue; // ignore neighbors that are part of the vug itself
+                // if (gelneigh->MaterialId() == EVugId) continue; // ignore neighbors that are part of the vug itself
                 TPZCompEl *celneigh = gelneigh->Reference();
                 celneigh->SetConnectIndex(neighside.Side(), connIndex);
             }
         }
     }
-
-    //for(int vug = 0; vug < nVugs; vug++){
-    //    int connIndex = vugIndex[vug];
-    //   if(connIndex == -1) std::cout << "PROBLEM: ConnectID not set for Vug " << vug << std::endl;
-    //    else std::cout << "ConnectID: " << connIndex << std::endl;
-    //}
 }
+
 void insertAtomicMaterials(TPZCompMesh *cmesh, std::set<int> matIdsVol, std::set<int> matIdsBcs, int typeMesh){
     int dim = cmesh->Dimension();
     if (typeMesh==0){//Se for malha de fluxo não insertar vugs

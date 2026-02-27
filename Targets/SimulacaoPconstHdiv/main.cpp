@@ -49,6 +49,7 @@ void GetAtomicIds(TPZGeoMesh *geomesh, std::set<int> &volId, std::set<int> &bcId
 void insertAtomicMaterials(TPZCompMesh *cmesh, std::set<int> matIdsVol, std::set<int> matIdsBcs,int typeMesh);
 void SetUniqueVugConnect(TPZGeoMesh *gmesh, TPZCompMesh *cmesh);
 void MeshWithSegmentVugs(TPZGeoMesh *gmesh);
+void PrintCompMesh(TPZCompMesh *cmesh);
 
 //using namespace cv;
 //using namespace std;
@@ -97,7 +98,7 @@ int Hdiv_MixedCT(){
     std::string filename="/Users/victorvillegassalabarria/Documents/Github/Vugs/FewVugsMesh.msh";
 
     gmesh = generateGMeshWithPhysTagVec(filename, dim_name_and_physical_tagCoarse);
-    gmeshp = generateGMeshWithPhysTagVec(filename, dim_name_and_physical_tagCoarse);
+    //gmeshp = generateGMeshWithPhysTagVec(filename, dim_name_and_physical_tagCoarse);
 
     
     //void findElDim(TPZStack<TPZGeoElSide> &allneigh, int dim, TPZStack<TPZGeoElSide> &allneighdim);
@@ -105,6 +106,7 @@ int Hdiv_MixedCT(){
     std::set<int> volId, bcId;
     GetAtomicIds(gmesh, volId, bcId);
     TPZCompMesh *Flux_cmesh=CreateFluxMesh(gmesh,volId,bcId);
+    
     TPZCompMesh *Pressure_cmesh=CreatePressureMesh(gmesh,volId,bcId,0);
     
     TPZMultiphysicsCompMesh *cmesh_mult= new TPZMultiphysicsCompMesh(gmesh);
@@ -113,15 +115,15 @@ int Hdiv_MixedCT(){
     meshvec[0]= Flux_cmesh;
     meshvec[1]= Pressure_cmesh;
     
-    
-    
-    
-    
-    
     std::ofstream file20("TestGeoMesh2D.vtk");
+    std::ofstream file21("Test_cmeshFlux.vtk");
+    std::ofstream file22("Test_cmeshPressure.vtk");
+    std::ofstream file23("Test_cmeshPressure.txt");
+
     TPZVTKGeoMesh::PrintGMeshVTK(gmesh, file20);
-    
-    
+    TPZVTKGeoMesh::PrintCMeshVTK(Flux_cmesh,file21);
+    TPZVTKGeoMesh::PrintCMeshVTK(Pressure_cmesh,file22);
+    Pressure_cmesh->Print(file23);
 //    int order =1;
 //    TPZHDivApproxCreator hdivCreator(gmesh);
 //    hdivCreator.ProbType() = ProblemType::EDarcy;
@@ -178,42 +180,42 @@ int Hdiv_MixedCT(){
     cmesh_mult->BuildMultiphysicsSpace(meshvec);
         //TPZManVector<int, 2> active_approx_spaces(2, 1);
         //cmesh_mult->BuildMultiphysicsSpace(active_approx_spaces, meshvec);
-        cmesh_mult->InitializeBlock();
-        std::cout<<cmesh_mult->Element(1)<<std::endl;
+    cmesh_mult->InitializeBlock();
+    std::cout<<cmesh_mult->Element(1)<<std::endl;
         
-        bool mustOp = false;
+    bool mustOp = false;
 
-          //CreateAnalisys
-        TPZLinearAnalysis *Analisys = new TPZLinearAnalysis(cmesh_mult);
+    //CreateAnalisys
+    TPZLinearAnalysis *Analisys = new TPZLinearAnalysis(cmesh_mult);
         
-        //new TPZLinearAnalysis(cmesh_mult);
+    //new TPZLinearAnalysis(cmesh_mult);
         
 
-          //TPZAnalysis *Analisys = new TPZAnalysis(cmesh_mult,true);
+    //TPZAnalysis *Analisys = new TPZAnalysis(cmesh_mult,true);
     //      bool mustOptimizeBandwidth = false;
          
-          //Carga la solución a la malla computacional
-          Analisys->LoadSolution();
+    //Carga la solución a la malla computacional
+    Analisys->LoadSolution();
           
-         // Selecciona el método numérico para resolver el problema algebraico
-          TPZStepSolver<STATE> step;
+    // Selecciona el método numérico para resolver el problema algebraico
+    TPZStepSolver<STATE> step;
           
-      //    TPZSSpStructMatrix<STATE> matrix(cmesh);
-          step.SetDirect(ELDLt);
+    //    TPZSSpStructMatrix<STATE> matrix(cmesh);
+    step.SetDirect(ELDLt);
         
-      //    Analisys->SetStructuralMatrix(matrix);
+    //    Analisys->SetStructuralMatrix(matrix);
         
-          Analisys->SetSolver(step);
+    Analisys->SetSolver(step);
           
           //Ensamblaje de la matriz de rigidez y vector de carga
-          Analisys->Assemble();
+    Analisys->Assemble();
 
           //Resolución del sistema algebraico
           //Analisys->Solve();
-        TPZElementMatrixT<double> mat, vec;
-        std::ofstream file("matrixel.txt");
-        int nels =cmesh_mult->NElements();
-        for (int i=1;i<nels;i++){
+    TPZElementMatrixT<double> mat, vec;
+    std::ofstream file("matrixel.txt");
+    int nels =cmesh_mult->NElements();
+    for (int i=1;i<nels;i++){
             auto cel=cmesh_mult->Element(i);
             auto gel=cel->Reference();
             if(gel->Dimension()==2){
@@ -395,14 +397,14 @@ void SetUniqueVugConnect(TPZGeoMesh *gmesh, TPZCompMesh *cmesh){
         int meshDim = gmesh->Dimension();
 
         //if (gel->Dimension() != meshDim-1) continue; // only boundary elements (Dim-1 elems)
-        if (gel->MaterialId() < EVugId) continue;  
+        if (gel->MaterialId() < EVugId) continue;
 
         int connIndex = 0;
         auto it = matId_connect.find(gel->MaterialId()); // check if the material ID of the vug already has an associated connect index
         if(it != matId_connect.end()){ // if it has, use the same connect index for all vug elements
             connIndex = matId_connect.at(gel->MaterialId());
         }
-        else{ // if it doesn't, create a new connect index and associate it with the material ID of the vug 
+        else{ // if it doesn't, create a new connect index and associate it with the material ID of the vug
             connIndex = cel->ConnectIndex(0);
             matId_connect.insert({gel->MaterialId(), connIndex});
         }
@@ -431,32 +433,35 @@ void insertAtomicMaterials(TPZCompMesh *cmesh, std::set<int> matIdsVol, std::set
     int dim = cmesh->Dimension();
     if (typeMesh==0){//Se for malha de fluxo não insertar vugs
         for (auto iD:matIdsVol) {
-            if(iD<99){
+            if(iD<499){
             TPZNullMaterial <STATE> *matDarcy = new TPZNullMaterial(iD, dim);
             cmesh->InsertMaterialObject(matDarcy);
             }
-            else if(iD>99)continue;
+            else if(iD>499)continue;
             
         }
         for (auto iD:matIdsBcs) {
-            if(iD<99){
+            
             TPZNullMaterial<STATE> * face2 = new TPZNullMaterial(iD, dim-1);
             cmesh->InsertMaterialObject(face2);
-            }
-            else if(iD>99)continue;
+            
+
 
         }
     }
     else if (typeMesh==1){//Se for malha de pressão
         for (auto iD:matIdsVol) {
+            
             TPZNullMaterial <STATE> *matDarcy = new TPZNullMaterial(iD, dim);
             cmesh->InsertMaterialObject(matDarcy);
           
         }
         for (auto iD:matIdsBcs) {
-            
+            if(iD<99){
             TPZNullMaterial<STATE> * face2 = new TPZNullMaterial(iD, dim-1);
             cmesh->InsertMaterialObject(face2);
+            }
+            else if(iD>99)continue;
 
         }
     
@@ -479,9 +484,8 @@ void GetAtomicIds(TPZGeoMesh *geomesh, std::set<int> &volId, std::set<int> &bcId
     }
 }
 TPZCompMesh *CreateFluxMesh(TPZGeoMesh *gmesh, std::set<int> &volId, std::set<int> &bcId){
-    int matId=1;
     int dim2d = 2;
-    int typeMesh=0;
+    int typeMesh=0;//Malha de fluxo
     TPZCompMesh *cmesh = new TPZCompMesh(gmesh);
      
     //GetAtomicIds(gmesh, volId, bcId);
@@ -499,13 +503,14 @@ TPZCompMesh *CreateFluxMesh(TPZGeoMesh *gmesh, std::set<int> &volId, std::set<in
     return cmesh;
 }
 TPZCompMesh *CreatePressureMesh(TPZGeoMesh *gmesh, std::set<int> &volId, std::set<int> &bcId,int order){
-    int TypeMesh=1;
+    int TypeMesh=1;//Malha de pressão
     TPZCompMesh *cmesh = new TPZCompMesh(gmesh);
     //GetAtomicIds(gmesh, volId, bcId);
     insertAtomicMaterials(cmesh, volId, bcId,TypeMesh);
+    cmesh->AutoBuild();
     SetUniqueVugConnect(gmesh, cmesh);
 
-    cmesh->AutoBuild();
+    //cmesh->AutoBuild();
         
     if(order>0){
             cmesh->ApproxSpace().SetAllCreateFunctionsContinuous();
@@ -531,5 +536,15 @@ TPZCompMesh *CreatePressureMesh(TPZGeoMesh *gmesh, std::set<int> &volId, std::se
     cmesh->InitializeBlock();
         
     return cmesh;
+}
+void PrintCompMesh(TPZCompMesh *cmesh)
+{
+    std::cout << "\nPrinting multiphysics mesh in .txt and .vtk formats...\n";
+
+    std::ofstream VTKCompMeshFile(cmesh->Name() + ".vtk");
+    std::ofstream TextCompMeshFile(cmesh->Name() + ".txt");
+
+    TPZVTKGeoMesh::PrintCMeshVTK(cmesh, VTKCompMeshFile);
+    cmesh->Print(TextCompMeshFile);
 }
 

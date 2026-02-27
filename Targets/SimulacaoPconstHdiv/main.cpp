@@ -214,64 +214,27 @@ void Hdiv_Fract(){
     gmesh = generateGMeshWithPhysTagVec(filename, dim_name_and_physical_tagCoarse);
 
     TPZVTKGeoMesh::PrintGMeshVTK(gmesh, file20);
-    std::set<int> vugBcIds;
-    std::set<int> vugIds;
-    TPZCompMesh *cmesh =  new TPZCompMesh(gmesh);
-    //TPZMixedDarcyFlow *matDarcyf = new TPZMixedDarcyFlow(EMatId,2);
-    ////TPZMixedDarcyFlow *matDarcyFractsf= new TPZMixedDarcyFlow(300,1);
-
-    //
-    //
-    //cmesh->InsertMaterialObject(matDarcyf);
-    //cmesh->InsertMaterialObject(matDarcyFractsf);
-    MeshWithSegmentVugs(gmesh, vugBcIds,vugIds);
-    {
-        std::ofstream out("Gmesh.txt");
-        gmesh->Print(out);
-    }
     
-    std::cout<<"Vug bc index final2: "<<vugBcIds.size()<<std::endl;
-
-    //MeshWithSegmentVugs(gmesh, );
-
-    std::set<int> volId, bcId;
-    GetAtomicIds(gmesh, volId, bcId);
-    int orderp=1;
-    PrintCompMesh(cmesh);
-
-    //DuplicateConnectFracture(gmesh, cmesh,alln);
-
-    TPZCompMesh *Pressure_cmesh=CreatePressureMesh(gmesh,volId,bcId,1);
-
-    TPZCompMesh *Flux_cmesh=CreateFluxMesh(gmesh,volId,bcId,orderp);
-//    DuplicateConnectFracture(gmesh, Flux_cmesh);
-
-    TPZMultiphysicsCompMesh *cmesh_mult= new TPZMultiphysicsCompMesh(gmesh);
-    cmesh_mult->SetName("MultiMesh");
-    TPZVec<TPZCompMesh *> meshvec(2);
-    TPZVec<int >  active_approx_spaces(2);
-    active_approx_spaces[0]=1;
-    active_approx_spaces[1]=1;
-
-    meshvec[0]= Flux_cmesh;
-    meshvec[1]= Pressure_cmesh;
-    SideOrientation(Flux_cmesh);
-
+    
+    int order =1;
+    TPZHDivApproxCreator hdivCreator(gmesh);
+    hdivCreator.ProbType() = ProblemType::EDarcy;
+    hdivCreator.SetDefaultOrder(order);
+    hdivCreator.SetShouldCondense(false);
+    
+    
     // Add materials (weak formulation)
-    TPZMixedDarcyFlow *matDarcy = new TPZMixedDarcyFlow(EMatId,2);
-    TPZMixedDarcyFlow *matDarcyFracts= new TPZMixedDarcyFlow(5,1);
-    //TPZMixedDarcyFlow *matDarcyFracts= new TPZMixedDarcyFlow(300,1);
-    auto matfrac= new TPZMixedDarcyFractureFlow(300, 1);
-    //
-    //
-    //TPZMixedDarcyFlow *matDarcyFracts= new TPZMixedDarcyFlow(EVugId,1);
-    //
-    //
-    cmesh_mult->InsertMaterialObject(matDarcy);
-    cmesh_mult->InsertMaterialObject(matDarcyFracts);
-    //matDarcy->SetConstantPermeability(0.01);
-    //matDarcyFracts->SetConstantPermeability(1e6);
+    TPZMixedDarcyFlow *matDarcy = new TPZMixedDarcyFlow(1,2);
+    TPZMixedDarcyFlow *matDarcyVugs= new TPZMixedDarcyFlow(6,2);
 
+    matDarcy->SetConstantPermeability(0.01);
+    hdivCreator.InsertMaterialObject(matDarcy);
+    
+    matDarcyVugs->SetConstantPermeability(1e9);
+
+
+    hdivCreator.InsertMaterialObject(matDarcyVugs);
+    
     int bc_id=2;
     int bc_typeN = 1;
     int bc_typeD = 0;
@@ -279,50 +242,49 @@ void Hdiv_Fract(){
     TPZVec<STATE> val2(1,0.0);
     int dim2d=2;
 
-    TPZBndCond * face2 = matDarcy->CreateBC(matDarcy,EbcNoFlux,bc_typeN,val1,val2);
-    cmesh_mult->InsertMaterialObject(face2);
+    TPZBndCond * face2 = matDarcy->CreateBC(matDarcy,bcNoFlux,bc_typeN,val1,val2);
 
+    hdivCreator.InsertMaterialObject(face2);
+
+    
     val2[0]=100; // Valor a ser impuesto como presión en la entrada
-    TPZBndCond * face = matDarcy->CreateBC(matDarcy,EbcInletId,bc_typeD,val1,val2);
-    cmesh_mult->InsertMaterialObject(face);
+    TPZBndCond * face = matDarcy->CreateBC(matDarcy,bcinletId,bc_typeD,val1,val2);
 
-    val2[0]=10; // Valor a ser impuesto como presión en la salida
-    TPZBndCond * face1 = matDarcy->CreateBC(matDarcy,EbcOutletId,bc_typeD,val1,val2);
-    cmesh_mult->InsertMaterialObject(face1);
-//    int PContornoVug=50;
-//    val2[0]=PContornoVug;
-//    TPZBndCond *faceVug = matDarcyFracts->CreateBC(matDarcyFracts,300,bc_typeD,val1,val2);
+    hdivCreator.InsertMaterialObject(face);
 
-    cmesh_mult->ExpandSolution();
-    cmesh_mult->ApproxSpace().Style()= TPZCreateApproximationSpace::EMultiphysics;
-    //SetUniqueVugConnect(gmesh, cmesh_mult);
+    val2[0]=14; // Valor a ser impuesto como presión en la salida
+    TPZBndCond * face1 = matDarcy->CreateBC(matDarcy,bcOutletId,bc_typeD,val1,val2);
 
-    //cmesh_mult->BuildMultiphysicsSpace(active_approx_spaces,meshvec);
-    cmesh_mult->BuildMultiphysicsSpace(meshvec);
+    hdivCreator.InsertMaterialObject(face1);
 
-    cmesh_mult->CleanUpUnconnectedNodes();
+    
+    int lagmultilevel = 1;
+    TPZManVector<TPZCompMesh *, 7> meshvec(2);
 
-    //SideOrientation(cmesh_mult);
-    TPZVTKGeoMesh::PrintGMeshVTK(gmesh, file20);
+    hdivCreator.CreateAtomicMeshes(meshvec, lagmultilevel); // This method increments the lagmultilevel
+    TPZMultiphysicsCompMesh *cmesh = nullptr;
 
-    cmesh_mult->InitializeBlock();
-    bool mustOp = false;
+    hdivCreator.CreateMultiPhysicsMesh(meshvec, lagmultilevel, cmesh);
 
-    PrintCompMesh(Flux_cmesh);
-    PrintCompMesh(Pressure_cmesh);
-    PrintCompMesh(cmesh_mult);
+    cmesh->Reference()->ResetReference();
+    cmesh->LoadReferences();
 
-    cmesh_mult->Reference()->ResetReference();
-    cmesh_mult->LoadReferences();
-    //TPZLinearAnalysis anMixed(cmesh_mult,RenumType::EMetis);
-    TPZLinearAnalysis anMixed(cmesh_mult,RenumType::EMetis);
+    for (int iel = 0; iel < cmesh->NElements(); iel++) {
+        auto cel = cmesh->Element(iel);
+        if (!cel) continue;
 
-    //anMixed->ShowShape(strShape, eqIndices);//new TPZLinearAnalysis(cmesh_mult);
-    #ifdef PZ_USING_MKL
-    TPZSSpStructMatrix<STATE> matMixed(cmesh_mult);
-    #else
-    TPZFStructMatrix<STATE> matMixed(cmesh_mult);
-    #endif
+        if (cel->Material()->Id() == 3) {
+            std::cout << "BC element with ndof = "
+                      << cel->NConnects() << std::endl;
+        }
+    }
+
+    TPZLinearAnalysis anMixed(cmesh, RenumType::EMetis);
+  #ifdef PZ_USING_MKL
+    TPZSSpStructMatrix<STATE> matMixed(cmesh);
+  #else
+    TPZFStructMatrix<STATE> matMixed(cmesh);
+  #endif
     matMixed.SetNumThreads(0);
     anMixed.SetStructuralMatrix(matMixed);
     TPZStepSolver<STATE> stepMixed;
@@ -330,178 +292,150 @@ void Hdiv_Fract(){
     anMixed.SetSolver(stepMixed);
     anMixed.Run();
 
+    // ---- Plotting ---
+
     {
-        const std::string plotfile = "darcy_mixed";
-        constexpr int vtkRes{0};
-        TPZManVector<std::string, 2> fields = {"Flux", "Pressure"};
-        auto vtk = TPZVTKGenerator(cmesh_mult, fields, plotfile, vtkRes);
-        vtk.Do();
+      const std::string plotfile = "darcy_mixed";
+      constexpr int vtkRes{0};
+      TPZManVector<std::string, 2> fields = {"Flux", "Pressure"};
+      auto vtk = TPZVTKGenerator(cmesh, fields, plotfile, vtkRes);
+      vtk.Do();
     }
-        // --- Clean up ---
-        delete cmesh_mult;
+
+    // --- Clean up ---
+    delete cmesh;
 }
 
-int main2DFracVug(){
-      TPZGeoMesh *gmesh = new TPZGeoMesh;
-      TPZManVector<std::map<std::string,int>,4> dim_name_and_physical_tagCoarse(4);
-      dim_name_and_physical_tagCoarse[2]["k11"] = 1;
-      //dim_name_and_physical_tagCoarse[2]["SmallVug"] = 7;
-      //dim_name_and_physical_tagCoarse[2]["BigVug"] = 8;
-      dim_name_and_physical_tagCoarse[2]["Vugs"] = 6;
-      dim_name_and_physical_tagCoarse[1]["inlet"] = 2;
-      dim_name_and_physical_tagCoarse[1]["outlet"] = 3;
-      dim_name_and_physical_tagCoarse[1]["noflux"] = 4;
-      //dim_name_and_physical_tagCoarse[1]["SmallFract"] = 5;
-      //dim_name_and_physical_tagCoarse[1]["BigFract"] = 6;
 
 
-      
-      //std::string filename="/Users/victorvillegassalabarria/python-test/testskel4.msh";
-      //std::string filename="/Users/victorvillegassalabarria/python-test/testskel30sp.msh";
-      std::string filename="/Users/victorvillegassalabarria/python-test/testskelSLICE77SP.msh";
+void findElDim(TPZStack<TPZGeoElSide> &allneigh, int dim, TPZStack<TPZGeoElSide> &allneighdim){
+    int nels = allneigh.size();
+    for (int iel =0; iel<nels; iel++) {
+        if (allneigh[iel].Element()->Dimension()==dim) {
+            allneighdim.push_back(allneigh[iel]);
+        }
+    }
+}
 
-      gmesh = generateGMeshWithPhysTagVec(filename, dim_name_and_physical_tagCoarse);
-     
-      std::ofstream file3("TestGeoMesh2Dskel.vtk");
-      TPZVTKGeoMesh::PrintGMeshVTK(gmesh, file3);
-      //Create CompMesh
-      TPZCompMesh *cmesh =  new TPZCompMesh(gmesh);
-    
-        //Create Materials
-        int matId=1;
-        int dim2d = 2;
-        int matIdsmallFract=2;
-        int matIBigFract=2;
-        int dim1d=1;
-    
-        TPZDarcyFlow *matDarcy = new TPZDarcyFlow(matId, dim2d);
-//        TPZDarcyFlow *matDarcySmallFract= new TPZDarcyFlow(5,dim1d);
-        //TPZDarcyFlow *matDarcyBigFract= new TPZDarcyFlow(6,dim1d);
-        //TPZDarcyFlow *matDarcySmallVug= new TPZDarcyFlow(7,dim2d);
-        TPZDarcyFlow *matDarcySmallVug= new TPZDarcyFlow(6,dim2d);
-        //TPZDarcyFlow *matDarcyBigVug= new TPZDarcyFlow(8,dim2d);
-    
-        matDarcy->SetConstantPermeability(0.01);
-        matDarcySmallVug->SetConstantPermeability(1e9);
-        //matDarcyBigVug->SetConstantPermeability(1.0e9);
-//        matDarcySmallFract->SetConstantPermeability(1e9);
-        //matDarcyBigFract->SetConstantPermeability(1.0e9);
-    int x, y;
 
-//    // Definir una función de permeabilidad como una lambda
-//    PermeabilityFunctionType perm_function = [](const TPZVec<REAL>& coord) -> STATE {
-//        if (coord[0]>100 and coord[1]>100){
-//            return 1000;
-//        }
-//        else{
-//            return 1;
-//
-//        };
-//    };
-    PermeabilityFunctionType perm_function = [](const TPZVec<REAL>& coord) -> STATE {
-        REAL x = coord[0];
-        REAL y = coord[1];
-        REAL arg = 2 * M_PI * x + 2 * M_PI * y;
-        REAL cos_arg = cos(arg);
-        REAL exp_term = exp(2.3 * cos_arg);
-        
-        return exp_term;
-    };
-//        // Ejemplo: Permeabilidad depende de x (coord[0])
-//        return coord[0] * 1e-3;
-//
-//
-    //matDarcy->SetPermeabilityFunction(perm_function);
-    //Conseguir permeabilidade em um ponto da malha coord(x,y);
+TPZCompMesh *HdivMesh(TPZGeoMesh *gmesh){
+    int matId=1;
+    int dim2d = 2;
+    TPZCompMesh *cmesh = new TPZCompMesh(gmesh);
+ 
+    std::set<int> volId, bcId;
+    GetAtomicIds(gmesh, volId, bcId);
+    insertAtomicMaterials(cmesh, volId, bcId);
     
-    TPZVec<REAL> coord(2);
-    coord[0]=90.5;
-    coord[1]=650;
-    auto Perm=matDarcy->GetPermeability(coord);
-    std::cout<<Perm<<std::endl;
-    //Conseguir permeabilidade em um ponto da malha coord(x,y);
-    cmesh->InsertMaterialObject(matDarcy);
-        int bc_id=2;
-        int bc_typeN = 1;
-        int bc_typeD = 0;
-        TPZFMatrix<STATE> val1(1,1,0.0);
-        TPZVec<STATE> val2(1,0.0);
-        
-        int bcinletId = 2;
-        int bcOutletId = 3;
-        int bcNoFlux = 4;
-        TPZBndCond * face2 = matDarcy->CreateBC(matDarcy,bcNoFlux,bc_typeN,val1,val2);
-        cmesh->InsertMaterialObject(face2);
-        
-        val2[0]=100; // Valor a ser impuesto como presión en la entrada
-        TPZBndCond * face = matDarcy->CreateBC(matDarcy,bcinletId,bc_typeD,val1,val2);
-        cmesh->InsertMaterialObject(face);
-        
-        val2[0]=10; // Valor a ser impuesto como presión en la salida
-        TPZBndCond * face1 = matDarcy->CreateBC(matDarcy,bcOutletId,bc_typeD,val1,val2);
-        cmesh->InsertMaterialObject(face1);
-        //cmesh->InsertMaterialObject(matDarcySmallFract);
-        //cmesh->InsertMaterialObject(matDarcyBigFract);
-        cmesh->InsertMaterialObject(matDarcySmallVug);
-        //cmesh->InsertMaterialObject(matDarcyBigVug);
-       
-        cmesh->AutoBuild();
-        //Esto hace que el espacio de aproxiación sea H1
+    //int pOrder=1;
+    int pOrder=1;
+    cmesh->SetDefaultOrder(pOrder);
+    int meshdim = gmesh->Dimension();
+
+    cmesh->ApproxSpace().SetAllCreateFunctionsHDiv(meshdim);
+    cmesh->AutoBuild();
+    cmesh->InitializeBlock();
+    std::cout<<cmesh->NEquations() <<std::endl;
+    return cmesh;
+}
+
+
+TPZCompMesh* CreateCompMeshV(TPZGeoMesh *gmesh){
+    
+    TPZCompMesh *cmesh_v = new TPZCompMesh(gmesh);
+
+    //cmesh_v->ApproxSpace().SetHDivFamily(HDivFamily::EHDivStandard);
+    cmesh_v->SetAllCreateFunctionsHDiv();
+
+    TPZNullMaterial<STATE> *nullMat = new TPZNullMaterial(matID_flux, gmesh->Dimension());  
+    cmesh_v->InsertMaterialObject(nullMat);
+
+
+
+    return cmesh_v;
+}
+
+TPZCompMesh *CreateCompMeshP(TPZGeoMesh *gmesh,int order){
+    TPZCompMesh *cmesh_p = new TPZCompMesh(gmesh);
+    std::set<int> volId, bcId;
+    GetAtomicIds(gmesh, volId, bcId);
+    insertAtomicMaterials(cmesh, volId, bcId);
+
+    cmesh->AutoBuild();
+    
+    if(order>0){
         cmesh->ApproxSpace().SetAllCreateFunctionsContinuous();
-        
-        //Inicializa el tamaño del vector solución
-        cmesh->ExpandSolution();
-        
+        cmesh->ApproxSpace().CreateDisconnectedElements(true);
+    }
+    else {
+        cmesh->ApproxSpace().SetAllCreateFunctionsDiscontinuous();
+        cmesh->ApproxSpace().CreateDisconnectedElements(true);
+    }
+    
+    // if(1 > 0){ //? What?
+    //        int64_t ncon = cmesh->NConnects();
+    //        for(int64_t i=0; i<ncon; i++){
+    //            TPZConnect &newnod = cmesh->ConnectVec()[i];
+    //            newnod.SetLagrangeMultiplier(1);
+    //        }
+    //    }
+    
+    
+    cmesh->SetDefaultOrder(order);
+
+    TPZNullMaterial<STATE> *nullMat = new TPZNullMaterial(matID_pressure, gmesh->Dimension());  
+    cmesh_p->InsertMaterialObject(nullMat);
+
+    cmesh->AutoBuild();
+    cmesh->InitializeBlock();
+    
+    return cmesh;
+}
+
+void insertAtomicMaterials(TPZCompMesh *cmesh, std::set<int> matIdsVol, std::set<int> matIdsBcs){
+    
+    int dim = cmesh->Dimension();
+    
+    for (auto iD:matIdsVol) {
+        TPZNullMaterial <STATE> *matDarcy = new TPZNullMaterial(iD, dim);
+        cmesh->InsertMaterialObject(matDarcy);
       
-        //CreateAnalisys
-        TPZLinearAnalysis *Analisys = new TPZLinearAnalysis(cmesh);
-        bool mustOptimizeBandwidth = false;
-       
-        //Carga la solución a la malla computacional
-        Analisys->LoadSolution();
+    }
+    for (auto iD:matIdsBcs) {
         
-       // Selecciona el método numérico para resolver el problema algebraico
-        TPZStepSolver<STATE> step;
-        
-    //    TPZSSpStructMatrix<STATE> matrix(cmesh);
-        step.SetDirect(ELDLt);
-      
-    //    Analisys->SetStructuralMatrix(matrix);
-        
+        TPZNullMaterial<STATE> * face2 = new TPZNullMaterial(iD, dim-1);
+        cmesh->InsertMaterialObject(face2);
 
-        Analisys->SetSolver(step);
-        
-        //Ensamblaje de la matriz de rigidez y vector de carga
-        Analisys->Assemble();
-
-        //Resolución del sistema algebraico
-        Analisys->Solve();
-
-        //Definición de variables escalares y vectoriales a posprocesar
-        TPZStack<std::string,10> scalnames, vecnames;
-        vecnames.Push("Flux");
-        scalnames.Push("Pressure");
-        
-        //Configuración del posprocesamiento
-        int ref =0; // Permite refinar la malla con la solucion obtenida
-        std::string file_reservoir("Darcy_H1.vtk");
-        Analisys->DefineGraphMesh(dim2d,scalnames,vecnames,file_reservoir);
-        //Posprocesamiento
-        Analisys->PostProcess(ref, dim2d);
-     
-        return 0;
+    }
 }
 
 
-    //devuelve una malla L2
+
+void GetAtomicIds(TPZGeoMesh *geomesh, std::set<int> &volId, std::set<int> &bcId){
+    int dim = geomesh->Dimension();
+    for (auto gel: geomesh->ElementVec()) {
+        if (! gel) {
+            continue;
+        }
+        int matId = gel->MaterialId();
+        int geldim = gel->Dimension();
+        if (geldim == dim) {
+            volId.insert(matId);
+        }
+        if (geldim == dim-1) {
+            bcId.insert(matId);
+        }
+    }
+    
+    
+}
+
+
 
 int main (){
-    //Hdiv_MixedCT();
-    //Hdiv_Fract();
-    //Hdiv_MixedCT_constP();
-#ifdef PZ_LOG
-    TPZLogger::InitializePZLOG();
-#endif
-    Hdiv_MixedCT_PvugConst();
+    //main2DFracVug();
+    //mainDarcy3D();
+    //mainMixed();
+    //mainMixedCT();
     return 0;
 }

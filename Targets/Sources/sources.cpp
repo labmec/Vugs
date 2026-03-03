@@ -271,6 +271,9 @@ void InsertInterfaceEls(TPZMultiphysicsCompMesh *cmesh, TPZGeoMesh *gmesh){
     TPZLagrangeMultiplierCS<STATE> *matInterface = new TPZLagrangeMultiplierCS<STATE>(ELagrange, gmesh->Dimension()-1, 1);
     cmesh->InsertMaterialObject(matInterface);
 
+    gmesh->ResetReference(); //! ASK
+    cmesh->LoadReferences();
+
     int nEl = gmesh->NElements();
 
     for(int el = 0; el < nEl; el++){
@@ -281,21 +284,25 @@ void InsertInterfaceEls(TPZMultiphysicsCompMesh *cmesh, TPZGeoMesh *gmesh){
 
         int nSides = gel->NSides();
         TPZGeoElSide gelSide(gel, nSides - 1);
-        TPZStack<TPZGeoElSide> allneigh;
-        gelside.AllNeighbours(allneigh);
 
         TPZCompElSide neighVug = gelSide.HasNeighbour(EVugId).Reference();
         TPZCompElSide neighHdiv = gelSide.HasNeighbour(EVugBcId).Reference();
 
-        TPZGeoElSide neighVug1 = gelSide.HasNeighbour(EVugId);
-        TPZGeoElSide neighHdiv1 = gelSide.HasNeighbour(EVugBcId);
+        for (auto id: vugIds){
+            neighVug = gelSide.HasNeighbour(id).Reference();
+            if(neighVug) break;
+        }
+
+        for (auto id: vugBcIds){
+            neighHdiv = gelSide.HasNeighbour(id).Reference();
+            if(neighHdiv) break;
+        }
 
         if(!neighVug || !neighHdiv) DebugStop();
 
         TPZMultiphysicsInterfaceElement *interface = new TPZMultiphysicsInterfaceElement(*cmesh, gel, neighHdiv, neighVug);
     }
 }
-
 
 void PrintCompMesh(TPZCompMesh *cmesh)
 {

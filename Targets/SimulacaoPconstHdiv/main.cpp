@@ -15,7 +15,8 @@ void Hdiv_MixedCT(){
     
     //std::string filename="/Users/victorvillegassalabarria/python-test/testskelSLICE77SP.msh";
     //std::string filename="/Users/victorvillegassalabarria/Documents/Github/Vugs/FastMesh.msh";
-    std::string filename="/home/marina/programming/Stokes-Darcy-Research/VUGS/FastMesh.msh"; 
+    //std::string filename="/home/marina/programming/Stokes-Darcy-Research/VUGS/FastMesh.msh"; 
+    std::string filename="/home/marina/programming/Stokes-Darcy-Research/VUGS/FewVugsMesh.msh";
 
     std::ofstream file20("TestGeoMesh2D.vtk");
     // std::ofstream file21("Test_cmeshFlux.vtk");
@@ -43,10 +44,17 @@ void Hdiv_MixedCT(){
     meshvec[1]= Pressure_cmesh;
     
     // Add materials (weak formulation)
-    TPZMixedDarcyFlow *matDarcy = new TPZMixedDarcyFlow(1,2);
-    TPZMixedDarcyFlow *matDarcyVugs= new TPZMixedDarcyFlow(EVugId,2); //TODO VERIFICAR SE É ISSO fazer para cada vug
+    TPZMixedDarcyFlow *matDarcy = new TPZMixedDarcyFlow(EMatId,2);
+    //TPZMixedDarcyFlow *matDarcyVugs= new TPZMixedDarcyFlow(EVugId,2); 
+
+    //TODO VERIFICAR SE É ISSO fazer para cada vug
+    for(auto vugId: vugIds) {
+        TPZMixedDarcyFlow *matDarcyVugs= new TPZMixedDarcyFlow(vugId,2); 
+        cmesh_mult->InsertMaterialObject(matDarcyVugs);
+    }
+
     cmesh_mult->InsertMaterialObject(matDarcy);
-    cmesh_mult->InsertMaterialObject(matDarcyVugs);
+    //cmesh_mult->InsertMaterialObject(matDarcyVugs);
     matDarcy->SetConstantPermeability(0.01);
 
     int bc_id=2;
@@ -94,8 +102,11 @@ void Hdiv_MixedCT(){
     PrintCompMesh(cmesh_mult);
 
     const std::string strShape = "Shape.vtk";
-    TPZVec<int64_t> eqIndices(1, 0);
-    eqIndices[0] = 295;
+    TPZVec<int64_t> eqIndices(4, 0);
+    eqIndices[0] = 293;
+    eqIndices[1] = 294;
+    eqIndices[2] = 295;
+    eqIndices[3] = 296;
 
 
     Analisys->ShowShape(strShape, eqIndices);

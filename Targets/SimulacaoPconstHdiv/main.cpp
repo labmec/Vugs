@@ -14,10 +14,11 @@ void Hdiv_MixedCT(){
     dim_name_and_physical_tagCoarse[2]["Vugs"] = 6;
     
     //std::string filename="/Users/victorvillegassalabarria/python-test/testskelSLICE77SP.msh";
-    //std::string filename="/Users/victorvillegassalabarria/Documents/Github/Vugs/FastMesh.msh";
-    //std::string filename="/home/marina/programming/Stokes-Darcy-Research/VUGS/FastMesh.msh"; 
-    std::string filename="/home/marina/programming/Stokes-Darcy-Research/VUGS/FewVugsMesh.msh";
-
+    std::string filename="/Users/victorvillegassalabarria/Documents/Github/Vugs/FastMesh.msh";
+    //std::string filename="/home/marina/programming/Stokes-Darcy-Research/VUGS/FastMesh.msh";
+    //std::string filename="/home/marina/programming/Stokes-Darcy-Research/VUGS/FewVugsMesh.msh";
+    //std::string filename="/Users/victorvillegassalabarria/Downloads/MallaTriangles123.msh";
+    
     std::ofstream file20("TestGeoMesh2D.vtk");
     // std::ofstream file21("Test_cmeshFlux.vtk");
     // std::ofstream file22("Test_cmeshPressure.vtk");
@@ -31,10 +32,11 @@ void Hdiv_MixedCT(){
 
     std::set<int> volId, bcId;
     GetAtomicIds(gmesh, volId, bcId);
+    int orderp=1;
 
-    TPZCompMesh *Flux_cmesh=CreateFluxMesh(gmesh,volId,bcId);
+    TPZCompMesh *Flux_cmesh=CreateFluxMesh(gmesh,volId,bcId,orderp);
     
-    TPZCompMesh *Pressure_cmesh=CreatePressureMesh(gmesh,volId,bcId,0);
+    TPZCompMesh *Pressure_cmesh=CreatePressureMesh(gmesh,volId,bcId,orderp);
     
     TPZMultiphysicsCompMesh *cmesh_mult= new TPZMultiphysicsCompMesh(gmesh);
     cmesh_mult->SetName("MultiMesh");
@@ -48,10 +50,10 @@ void Hdiv_MixedCT(){
     //TPZMixedDarcyFlow *matDarcyVugs= new TPZMixedDarcyFlow(EVugId,2); 
 
     //TODO VERIFICAR SE É ISSO fazer para cada vug
-    for(auto vugId: vugIds) {
-        TPZMixedDarcyFlow *matDarcyVugs= new TPZMixedDarcyFlow(vugId,2); 
-        cmesh_mult->InsertMaterialObject(matDarcyVugs);
-    }
+//    for(auto vugId: vugIds) {
+//        TPZMixedDarcyFlow *matDarcyVugs= new TPZMixedDarcyFlow(vugId,2);
+//        cmesh_mult->InsertMaterialObject(matDarcyVugs);
+//    }
 
     cmesh_mult->InsertMaterialObject(matDarcy);
     //cmesh_mult->InsertMaterialObject(matDarcyVugs);
@@ -71,7 +73,7 @@ void Hdiv_MixedCT(){
     TPZBndCond * face = matDarcy->CreateBC(matDarcy,EbcInletId,bc_typeD,val1,val2);
     cmesh_mult->InsertMaterialObject(face);
 
-    val2[0]=14; // Valor a ser impuesto como presión en la salida
+    val2[0]=10; // Valor a ser impuesto como presión en la salida
     TPZBndCond * face1 = matDarcy->CreateBC(matDarcy,EbcOutletId,bc_typeD,val1,val2);
     cmesh_mult->InsertMaterialObject(face1);
 
@@ -85,17 +87,16 @@ void Hdiv_MixedCT(){
     cmesh_mult->ApproxSpace().Style()= TPZCreateApproximationSpace::EMultiphysics;
     cmesh_mult->BuildMultiphysicsSpace(meshvec);
 
-    CreateInterfaceGeoEls(gmesh);
-    InsertInterfaceEls(cmesh_mult, gmesh);
+    //CreateInterfaceGeoEls(gmesh);
+    //InsertInterfaceEls(cmesh_mult, gmesh);
 
     TPZVTKGeoMesh::PrintGMeshVTK(gmesh, file20);
 
     cmesh_mult->InitializeBlock();
-    std::cout<<cmesh_mult->Element(1)<<std::endl;
+    //std::cout<<cmesh_mult->Element(1)<<std::endl;
     bool mustOp = false;
 
     //Show Shape
-    TPZLinearAnalysis *Analisys = new TPZLinearAnalysis(Pressure_cmesh);
 
     PrintCompMesh(Flux_cmesh);
     PrintCompMesh(Pressure_cmesh);
@@ -109,56 +110,39 @@ void Hdiv_MixedCT(){
     eqIndices[3] = 296;
 
 
-    Analisys->ShowShape(strShape, eqIndices);
-    
+//    Analisys->ShowShape(strShape, eqIndices);
 
-    //TODO ANALYSIS
-    //TPZLinearAnalysis *Analisys = new TPZLinearAnalysis(cmesh_mult);
-        
 
-    //TPZAnalysis *Analisys = new TPZAnalysis(cmesh_mult,true);
-    //      bool mustOptimizeBandwidth = false;
-         
-    //Carga la solución a la malla computacional
-    Analisys->LoadSolution();
-          
-    // Selecciona el método numérico para resolver el problema algebraico
-    TPZStepSolver<STATE> step;
-          
-    //    TPZSSpStructMatrix<STATE> matrix(cmesh);
-    step.SetDirect(ELDLt);
-        
-    //    Analisys->SetStructuralMatrix(matrix);
-        
-    Analisys->SetSolver(step);
-          
-          //Ensamblaje de la matriz de rigidez y vector de carga
-    Analisys->Assemble();
+    cmesh_mult->Reference()->ResetReference();
+    cmesh_mult->LoadReferences();
+    //TPZLinearAnalysis anMixed(cmesh_mult,RenumType::EMetis);
+    TPZLinearAnalysis anMixed(cmesh_mult,RenumType::EMetis);
 
-          //Resolución del sistema algebraico
-          //Analisys->Solve();
-    TPZElementMatrixT<double> mat, vec;
-    std::ofstream file("matrixel.txt");
-    int nels =cmesh_mult->NElements();
-    for (int i=1;i<nels;i++){
-            auto cel=cmesh_mult->Element(i);
-            auto gel=cel->Reference();
-            if(gel->Dimension()==2){
-                cel->CalcStiff(mat,vec);
-                mat.fMat.Print(file);
-            }
+    //anMixed->ShowShape(strShape, eqIndices);//new TPZLinearAnalysis(cmesh_mult);
+        #ifdef PZ_USING_MKL
+        TPZSSpStructMatrix<STATE> matMixed(cmesh_mult);
+        #else
+        TPZFStructMatrix<STATE> matMixed(cmesh_mult);
+        #endif
+        matMixed.SetNumThreads(0);
+        anMixed.SetStructuralMatrix(matMixed);
+        TPZStepSolver<STATE> stepMixed;
+        stepMixed.SetDirect(ELDLt);
+        anMixed.SetSolver(stepMixed);
+        anMixed.Run();
+
+        {
+          const std::string plotfile = "darcy_mixed";
+          constexpr int vtkRes{0};
+          TPZManVector<std::string, 2> fields = {"Flux", "Pressure"};
+          auto vtk = TPZVTKGenerator(cmesh_mult, fields, plotfile, vtkRes);
+          vtk.Do();
         }
-          //Definición de variables escalares y vectoriales a posprocesar
-          TPZStack<std::string,10> scalnames, vecnames;
-          vecnames.Push("Flux");
-          scalnames.Push("Pressure");
-          
-          //Configuración del posprocesamiento
-          int ref =0; // Permite refinar la malla con la solucion obtenida
-          std::string file_reservoir("SolVictorCTmesh.vtk");
-          Analisys->DefineGraphMesh(dim2d,scalnames,vecnames,file_reservoir);
-          //Posprocesamiento
-          Analisys->PostProcess(ref, dim2d);
+
+        // --- Clean up ---
+        delete cmesh_mult;
+
+    
 }
 
 

@@ -55,7 +55,7 @@ std::set<int> vugBcIds;
 //TPZCompMesh* HdivMesh(TPZGeoMesh *);
 //TPZCompMesh* Pressuremesh(TPZGeoMesh *, int order);
 
-TPZCompMesh *CreateFluxMesh(TPZGeoMesh *, std::set<int> &volId, std::set<int> &bcId);
+TPZCompMesh *CreateFluxMesh(TPZGeoMesh *, std::set<int> &volId, std::set<int> &bcId, int &orderp);
 
 TPZCompMesh *CreatePressureMesh(TPZGeoMesh *,std::set<int> &volId, std::set<int> &bcId,int order);
 
@@ -78,3 +78,5 @@ TPZGeoMesh* generateGMeshWithPhysTagVec(std::string& filename, TPZManVector<std:
 void findElDim(TPZStack<TPZGeoElSide> &allneigh, int dim, TPZStack<TPZGeoElSide> &allneighdim);
 
 void PrintCompMesh(TPZCompMesh *cmesh);
+void insertAtomicMaterialsf(TPZCompMesh *cmesh, std::set<int> matIdsVol, std::set<int> matIdsBcs);
+void insertAtomicMaterialsp(TPZCompMesh *cmesh, std::set<int> matIdsVol, std::set<int> matIdsBcs);

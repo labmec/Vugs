@@ -85,7 +85,6 @@ void MeshWithSegmentVugs(TPZGeoMesh *gmesh ){
 }
 
 void SetUniqueVugConnect(TPZGeoMesh *gmesh, TPZCompMesh *cmesh){
-
     int nels = gmesh->NElements();
     //TPZVec<int64_t> vugIndex(nVugs, -1);
     TPZVec<int64_t> gelIndex(nels, -1);
@@ -144,9 +143,6 @@ void insertAtomicMaterials(TPZCompMesh *cmesh, std::set<int> matIdsVol, std::set
             
             TPZNullMaterial<STATE> * face2 = new TPZNullMaterial(iD, dim-1);
             cmesh->InsertMaterialObject(face2);
-            
-
-
         }
     }
     else if (typeMesh==1){//Se for malha de pressão
@@ -154,7 +150,6 @@ void insertAtomicMaterials(TPZCompMesh *cmesh, std::set<int> matIdsVol, std::set
             
             TPZNullMaterial <STATE> *matDarcy = new TPZNullMaterial(iD, dim);
             cmesh->InsertMaterialObject(matDarcy);
-          
         }
         for (auto iD:matIdsBcs) {
             if(iD<99){
@@ -185,7 +180,7 @@ void GetAtomicIds(TPZGeoMesh *geomesh, std::set<int> &volId, std::set<int> &bcId
 }
 
 //TODO VERIFY
-TPZCompMesh *CreateFluxMesh(TPZGeoMesh *gmesh, std::set<int> &volId, std::set<int> &bcId){
+TPZCompMesh *CreateFluxMesh(TPZGeoMesh *gmesh, std::set<int> &volId, std::set<int> &bcId, int &orderp){
     int dim2d = 2;
     int typeMesh=0;//Malha de fluxo
     TPZCompMesh *cmesh = new TPZCompMesh(gmesh);
@@ -198,10 +193,12 @@ TPZCompMesh *CreateFluxMesh(TPZGeoMesh *gmesh, std::set<int> &volId, std::set<in
     int pOrder=1;
     cmesh->SetDefaultOrder(pOrder);
     int meshdim = gmesh->Dimension();
-
+    if (orderp==0){
+        cmesh->ApproxSpace().SetHDivFamily(HDivFamily::EHDivConstant);
+    }
     cmesh->ApproxSpace().SetAllCreateFunctionsHDiv(meshdim);
     cmesh->AutoBuild();
-    cmesh->InitializeBlock();
+    //cmesh->InitializeBlock();
     //std::cout<<cmesh->NEquations() <<std::endl;
     return cmesh;
 }
@@ -222,8 +219,9 @@ TPZCompMesh *CreatePressureMesh(TPZGeoMesh *gmesh, std::set<int> &volId, std::se
             cmesh->ApproxSpace().SetAllCreateFunctionsDiscontinuous();
             cmesh->ApproxSpace().CreateDisconnectedElements(true);
         }
-
-    insertAtomicMaterials(cmesh, volId, bcId, TypeMesh); 
+    
+    insertAtomicMaterials(cmesh, volId, bcId,TypeMesh);
+    
     
     cmesh->AutoBuild();
 
@@ -313,6 +311,57 @@ void PrintCompMesh(TPZCompMesh *cmesh)
 
     TPZVTKGeoMesh::PrintCMeshVTK(cmesh, VTKCompMeshFile);
     cmesh->Print(TextCompMeshFile);
+}
+void insertAtomicMaterialsf(TPZCompMesh *cmesh, std::set<int> matIdsVol, std::set<int> matIdsBcs){
+    
+    int dim = cmesh->Dimension();
+    
+    for (auto iD:matIdsVol) {
+        TPZNullMaterial <STATE> *matDarcy = new TPZNullMaterial(iD, dim);
+        cmesh->InsertMaterialObject(matDarcy);
+        
+        int bc_id=2;
+        int bc_typeN = 1;
+        int bc_typeD = 0;
+        TPZFMatrix<STATE> val1(1,1,0.0);
+        TPZVec<STATE> val2(1,0.0);
+        int dim2d=2;
+
+        TPZBndCond * face2 = matDarcy->CreateBC(matDarcy,EbcNoFlux,bc_typeN,val1,val2);
+        cmesh->InsertMaterialObject(face2);
+        
+        val2[0]=1000; // Valor a ser impuesto como presión en la entrada
+        
+        TPZBndCond * face = matDarcy->CreateBC(matDarcy,EbcInletId,bc_typeD,val1,val2);
+        cmesh->InsertMaterialObject(face);
+      
+        val2[0]=10; // Valor a ser impuesto como presión en la salida
+        TPZBndCond * face1 = matDarcy->CreateBC(matDarcy,EbcOutletId,bc_typeD,val1,val2);
+
+        cmesh->InsertMaterialObject(face1);
+      
+    }
+    for (auto iD:matIdsBcs) {
+        
+        TPZNullMaterial<STATE> * face2 = new TPZNullMaterial(iD, dim-1);
+        //cmesh->InsertMaterialObject(face2);
+
+    }
+}
+void insertAtomicMaterialsp(TPZCompMesh *cmesh, std::set<int> matIdsVol, std::set<int> matIdsBcs){
+    
+    int dim = cmesh->Dimension();
+    for (auto iD:matIdsVol) {
+        TPZNullMaterial <STATE> *matDarcy = new TPZNullMaterial(iD, dim);
+        cmesh->InsertMaterialObject(matDarcy);
+        
+    }
+    for (auto iD:matIdsBcs) {
+        
+        TPZNullMaterial<STATE> * face2 = new TPZNullMaterial(iD, dim-1);
+        //cmesh->InsertMaterialObject(face2);
+
+    }
 }
 
 

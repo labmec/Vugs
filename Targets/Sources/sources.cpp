@@ -135,24 +135,52 @@ void insertAtomicMaterials(TPZCompMesh *cmesh, std::set<int> matIdsVol, std::set
             if(iD<499){
             TPZNullMaterial <STATE> *matDarcy = new TPZNullMaterial(iD, dim);
             cmesh->InsertMaterialObject(matDarcy);
+                int bc_id=2;
+                int bc_typeN = 1;
+                int bc_typeD = 0;
+                TPZFMatrix<STATE> val1(1,1,0.0);
+                TPZVec<STATE> val2(1,0.0);
+                int dim2d=2;
+
+                TPZBndCond * face2 = matDarcy->CreateBC(matDarcy,EbcNoFlux,bc_typeN,val1,val2);
+                cmesh->InsertMaterialObject(face2);
+                
+                val2[0]=10; // Valor a ser impuesto como presión en la entrada
+                TPZBndCond * face = matDarcy->CreateBC(matDarcy,EbcInletId,bc_typeD,val1,val2);
+                cmesh->InsertMaterialObject(face);
+
+                val2[0]=100; // Valor a ser impuesto como presión en la salida
+                TPZBndCond * face1 = matDarcy->CreateBC(matDarcy,EbcOutletId,bc_typeD,val1,val2);
+                cmesh->InsertMaterialObject(face1);
+                val2[0]=-30;
+                TPZBndCond *faceVug = matDarcy->CreateBC(matDarcy,100,bc_typeD,val1,val2);
+                cmesh->InsertMaterialObject(faceVug);
             }
             else if(iD>499)continue;
-            
+                        
         }
         for (auto iD:matIdsBcs) {
-            
+//            TPZNullMaterial <STATE> *matDarcy = new TPZNullMaterial(iD, dim);
+//            cmesh->InsertMaterialObject(matDarcy);
+            if (!iD){
             TPZNullMaterial<STATE> * face2 = new TPZNullMaterial(iD, dim-1);
             cmesh->InsertMaterialObject(face2);
+            }
+
         }
     }
     else if (typeMesh==1){//Se for malha de pressão
         for (auto iD:matIdsVol) {
-            
+            if(iD<599){
+            std::cout<<"Material: "<<iD<<std::endl;
             TPZNullMaterial <STATE> *matDarcy = new TPZNullMaterial(iD, dim);
             cmesh->InsertMaterialObject(matDarcy);
+            }
         }
         for (auto iD:matIdsBcs) {
             if(iD<99){
+            std::cout<<"Material: "<<iD<<std::endl;
+
             TPZNullMaterial<STATE> * face2 = new TPZNullMaterial(iD, dim-1);
             cmesh->InsertMaterialObject(face2);
             }
@@ -160,6 +188,7 @@ void insertAtomicMaterials(TPZCompMesh *cmesh, std::set<int> matIdsVol, std::set
 
         }
     }
+
 }
 
 void GetAtomicIds(TPZGeoMesh *geomesh, std::set<int> &volId, std::set<int> &bcId){
@@ -188,7 +217,7 @@ TPZCompMesh *CreateFluxMesh(TPZGeoMesh *gmesh, std::set<int> &volId, std::set<in
      
     //GetAtomicIds(gmesh, volId, bcId);
     insertAtomicMaterials(cmesh, volId, bcId,typeMesh);
-        
+    
     //int pOrder=1;
     int pOrder=1;
     cmesh->SetDefaultOrder(pOrder);
@@ -198,7 +227,8 @@ TPZCompMesh *CreateFluxMesh(TPZGeoMesh *gmesh, std::set<int> &volId, std::set<in
     }
     cmesh->ApproxSpace().SetAllCreateFunctionsHDiv(meshdim);
     cmesh->AutoBuild();
-    //cmesh->InitializeBlock();
+    //SetUniqueVugConnect(gmesh, cmesh);
+    cmesh->InitializeBlock();
     //std::cout<<cmesh->NEquations() <<std::endl;
     return cmesh;
 }
@@ -233,7 +263,7 @@ TPZCompMesh *CreatePressureMesh(TPZGeoMesh *gmesh, std::set<int> &volId, std::se
         }
     }
 
-    SetUniqueVugConnect(gmesh, cmesh);
+    //SetUniqueVugConnect(gmesh, cmesh);
     cmesh->InitializeBlock();
  
     return cmesh;

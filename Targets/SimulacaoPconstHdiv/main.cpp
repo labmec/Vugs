@@ -14,9 +14,9 @@ void Hdiv_MixedCT(){
     dim_name_and_physical_tagCoarse[2]["Vugs"] = 6;
     
     //std::string filename="/Users/victorvillegassalabarria/python-test/testskelSLICE77SP.msh";
-    std::string filename="/Users/victorvillegassalabarria/Documents/Github/Vugs/FastMesh.msh";
+    //std::string filename="/Users/victorvillegassalabarria/Documents/Github/Vugs/FastMesh.msh";
     //std::string filename="/home/marina/programming/Stokes-Darcy-Research/VUGS/FastMesh.msh";
-    //std::string filename="/home/marina/programming/Stokes-Darcy-Research/VUGS/FewVugsMesh.msh";
+    std::string filename="/Users/victorvillegassalabarria/Documents/Github/Vugs/FewVugsMesh.msh";
     //std::string filename="/Users/victorvillegassalabarria/Downloads/MallaTriangles123.msh";
     
     std::ofstream file20("TestGeoMesh2D.vtk");
@@ -47,13 +47,14 @@ void Hdiv_MixedCT(){
     
     // Add materials (weak formulation)
     TPZMixedDarcyFlow *matDarcy = new TPZMixedDarcyFlow(EMatId,2);
-    //TPZMixedDarcyFlow *matDarcyVugs= new TPZMixedDarcyFlow(EVugId,2); 
+    //TPZMixedDarcyFlow *matDarcyVugs= new TPZMixedDarcyFlow(EVugId,2);
+    //TPZMixedDarcyFlow *matDarcyVugs= new TPZMixedDarcyFlow(600,2);
 
     //TODO VERIFICAR SE É ISSO fazer para cada vug
-//    for(auto vugId: vugIds) {
-//        TPZMixedDarcyFlow *matDarcyVugs= new TPZMixedDarcyFlow(vugId,2);
-//        cmesh_mult->InsertMaterialObject(matDarcyVugs);
-//    }
+    for(auto vugId: vugIds) {
+        TPZMixedDarcyFlow *matDarcyVugs= new TPZMixedDarcyFlow(vugId,2);
+        cmesh_mult->InsertMaterialObject(matDarcyVugs);
+    }
 
     cmesh_mult->InsertMaterialObject(matDarcy);
     //cmesh_mult->InsertMaterialObject(matDarcyVugs);
@@ -69,22 +70,28 @@ void Hdiv_MixedCT(){
     TPZBndCond * face2 = matDarcy->CreateBC(matDarcy,EbcNoFlux,bc_typeN,val1,val2);
     cmesh_mult->InsertMaterialObject(face2);
     
-    val2[0]=100; // Valor a ser impuesto como presión en la entrada
+    val2[0]=10; // Valor a ser impuesto como presión en la entrada
     TPZBndCond * face = matDarcy->CreateBC(matDarcy,EbcInletId,bc_typeD,val1,val2);
     cmesh_mult->InsertMaterialObject(face);
 
-    val2[0]=10; // Valor a ser impuesto como presión en la salida
+    val2[0]=100; // Valor a ser impuesto como presión en la salida
     TPZBndCond * face1 = matDarcy->CreateBC(matDarcy,EbcOutletId,bc_typeD,val1,val2);
     cmesh_mult->InsertMaterialObject(face1);
 
     //TODO Create comp elements of Vug Boundary
-    for(auto bcId: vugBcIds) {
-        TPZBndCond *faceVug = matDarcy->CreateBC(matDarcy,bcId,bc_typeD,val1,val2);
-        cmesh_mult->InsertMaterialObject(faceVug);
-    }
+//    for(auto bcId: vugBcIds) {
+//        TPZBndCond *faceVug = matDarcy->CreateBC(matDarcy,bcId,bc_typeD,val1,val2);
+//        cmesh_mult->InsertMaterialObject(faceVug);
+//    }
+    int PContornoVug=-30;
+    val2[0]=PContornoVug;
+    TPZBndCond *faceVug = matDarcy->CreateBC(matDarcy,100,bc_typeD,val1,val2);
+    cmesh_mult->InsertMaterialObject(faceVug);
 
     cmesh_mult->ExpandSolution();
     cmesh_mult->ApproxSpace().Style()= TPZCreateApproximationSpace::EMultiphysics;
+    //SetUniqueVugConnect(gmesh, cmesh_mult);
+
     cmesh_mult->BuildMultiphysicsSpace(meshvec);
 
     //CreateInterfaceGeoEls(gmesh);

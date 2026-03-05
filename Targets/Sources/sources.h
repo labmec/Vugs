@@ -37,6 +37,7 @@
 #include "TPZMultiphysicsCompMesh.h"
 #include "TPZHDivApproxCreator.h"
 #include "TPZLagrangeMultiplierCS.h"
+#include "pzintel.h"
 
 enum MatID{
     EMatId = 1,
@@ -78,5 +79,9 @@ TPZGeoMesh* generateGMeshWithPhysTagVec(std::string& filename, TPZManVector<std:
 void findElDim(TPZStack<TPZGeoElSide> &allneigh, int dim, TPZStack<TPZGeoElSide> &allneighdim);
 
 void PrintCompMesh(TPZCompMesh *cmesh);
+
+void SideOrientation(TPZCompMesh *cmesh);
+
 void insertAtomicMaterialsf(TPZCompMesh *cmesh, std::set<int> matIdsVol, std::set<int> matIdsBcs);
+
 void insertAtomicMaterialsp(TPZCompMesh *cmesh, std::set<int> matIdsVol, std::set<int> matIdsBcs);

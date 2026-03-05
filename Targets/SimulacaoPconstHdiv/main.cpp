@@ -14,8 +14,8 @@ void Hdiv_MixedCT(){
     dim_name_and_physical_tagCoarse[2]["Vugs"] = 6;
     
     //std::string filename="/Users/victorvillegassalabarria/python-test/testskelSLICE77SP.msh";
-    std::string filename="/Users/victorvillegassalabarria/Documents/Github/Vugs/FastMesh.msh";
-    //std::string filename="/home/marina/programming/Stokes-Darcy-Research/VUGS/FastMesh.msh";
+    //std::string filename="/Users/victorvillegassalabarria/Documents/Github/Vugs/FastMesh.msh";
+    std::string filename="/home/marina/programming/Stokes-Darcy-Research/VUGS/FastMesh.msh";
     //std::string filename="/home/marina/programming/Stokes-Darcy-Research/VUGS/FewVugsMesh.msh";
     //std::string filename="/Users/victorvillegassalabarria/Downloads/MallaTriangles123.msh";
     
@@ -78,6 +78,7 @@ void Hdiv_MixedCT(){
     cmesh_mult->InsertMaterialObject(face1);
 
     //TODO Create comp elements of Vug Boundary
+    //val2[0] = 100;
     for(auto bcId: vugBcIds) {
         TPZBndCond *faceVug = matDarcy->CreateBC(matDarcy,bcId,bc_typeD,val1,val2);
         cmesh_mult->InsertMaterialObject(faceVug);
@@ -86,6 +87,7 @@ void Hdiv_MixedCT(){
     cmesh_mult->ExpandSolution();
     cmesh_mult->ApproxSpace().Style()= TPZCreateApproximationSpace::EMultiphysics;
     cmesh_mult->BuildMultiphysicsSpace(meshvec);
+    cmesh_mult->CleanUpUnconnectedNodes();
 
     //CreateInterfaceGeoEls(gmesh);
     //InsertInterfaceEls(cmesh_mult, gmesh);
@@ -119,17 +121,17 @@ void Hdiv_MixedCT(){
     TPZLinearAnalysis anMixed(cmesh_mult,RenumType::EMetis);
 
     //anMixed->ShowShape(strShape, eqIndices);//new TPZLinearAnalysis(cmesh_mult);
-        #ifdef PZ_USING_MKL
-        TPZSSpStructMatrix<STATE> matMixed(cmesh_mult);
-        #else
-        TPZFStructMatrix<STATE> matMixed(cmesh_mult);
-        #endif
-        matMixed.SetNumThreads(0);
-        anMixed.SetStructuralMatrix(matMixed);
-        TPZStepSolver<STATE> stepMixed;
-        stepMixed.SetDirect(ELDLt);
-        anMixed.SetSolver(stepMixed);
-        anMixed.Run();
+    #ifdef PZ_USING_MKL
+    TPZSSpStructMatrix<STATE> matMixed(cmesh_mult);
+    #else
+    TPZFStructMatrix<STATE> matMixed(cmesh_mult);
+    #endif
+    matMixed.SetNumThreads(0);
+    anMixed.SetStructuralMatrix(matMixed);
+    TPZStepSolver<STATE> stepMixed;
+    stepMixed.SetDirect(ELDLt);
+    anMixed.SetSolver(stepMixed);
+    anMixed.Run();
 
         {
           const std::string plotfile = "darcy_mixed";

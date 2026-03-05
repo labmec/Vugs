@@ -151,14 +151,14 @@ void insertAtomicMaterials(TPZCompMesh *cmesh, std::set<int> matIdsVol, std::set
             TPZNullMaterial <STATE> *matDarcy = new TPZNullMaterial(iD, dim);
             cmesh->InsertMaterialObject(matDarcy);
         }
-        for (auto iD:matIdsBcs) {
-            if(iD<99){
-            TPZNullMaterial<STATE> * face2 = new TPZNullMaterial(iD, dim-1);
-            cmesh->InsertMaterialObject(face2);
-            }
-            else if(iD>99)continue;
+        // for (auto iD:matIdsBcs) { //! Acho que não cria bc aqui
+        //     if(iD<99){
+        //     TPZNullMaterial<STATE> * face2 = new TPZNullMaterial(iD, dim-1);
+        //     cmesh->InsertMaterialObject(face2);
+        //     }
+        //     else if(iD>99)continue;
 
-        }
+        // }
     }
 }
 
@@ -312,6 +312,34 @@ void PrintCompMesh(TPZCompMesh *cmesh)
     TPZVTKGeoMesh::PrintCMeshVTK(cmesh, VTKCompMeshFile);
     cmesh->Print(TextCompMeshFile);
 }
+
+void SideOrientation(TPZCompMesh *cmesh){ //CheckSideOrientation(TPZCompMesh *cmesh, TPZInterpolationSpace *intEl);
+
+    for(int el = 0; el < cmesh->NElements(); el++){
+        TPZCompEl *cel = cmesh->Element(el);
+        TPZGeoEl *gel = cel->Reference();
+        
+        //if(gel->MaterialId() < EVugBcId || gel->MaterialId() >= EVugId) continue;
+        if(gel->MaterialId() != EMatId) continue;
+        
+        int nSides = gel->NSides(); 
+        int nNodeSides = gel->NCornerNodes(); 
+
+        for(int side = nNodeSides; side < nSides-1; side++){
+            TPZGeoElSide gelSide(gel, side);
+            TPZGeoElSide neigh = gelSide.HasNeighbour(vugBcIds);
+            if(neigh){                
+                TPZInterpolatedElement *intel = dynamic_cast<TPZInterpolatedElement *>(cel);
+                int orientation = intel->GetSideOrient(side);
+                std::cout << orientation << "\n";
+                //int orientation = gel->NormalOrientation(side);
+                intel->SetSideOrient(side, 1.);
+                std::cout << intel->GetSideOrient(side) << "\n";
+            }
+        }
+    }
+}
+
 void insertAtomicMaterialsf(TPZCompMesh *cmesh, std::set<int> matIdsVol, std::set<int> matIdsBcs){
     
     int dim = cmesh->Dimension();
@@ -337,7 +365,6 @@ void insertAtomicMaterialsf(TPZCompMesh *cmesh, std::set<int> matIdsVol, std::se
       
         val2[0]=10; // Valor a ser impuesto como presión en la salida
         TPZBndCond * face1 = matDarcy->CreateBC(matDarcy,EbcOutletId,bc_typeD,val1,val2);
-
         cmesh->InsertMaterialObject(face1);
       
     }
@@ -348,6 +375,7 @@ void insertAtomicMaterialsf(TPZCompMesh *cmesh, std::set<int> matIdsVol, std::se
 
     }
 }
+
 void insertAtomicMaterialsp(TPZCompMesh *cmesh, std::set<int> matIdsVol, std::set<int> matIdsBcs){
     
     int dim = cmesh->Dimension();

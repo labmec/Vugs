@@ -1,5 +1,6 @@
 #include "sources.h"
-
+#include "pzlog.h"
+#include "Projection/TPZL2ProjectionCS.h"
 
 void Hdiv_MixedCT(){
     
@@ -28,7 +29,7 @@ void Hdiv_MixedCT(){
 
     gmesh = generateGMeshWithPhysTagVec(filename, dim_name_and_physical_tagCoarse);
     
-    MeshWithSegmentVugs(gmesh);
+    MeshWithSegmentVugs(gmesh); //!FAZER COM QUE ESSA FUNÇÃO RETORNE OS SETS THE IDS
 
     std::set<int> volId, bcId;
     GetAtomicIds(gmesh, volId, bcId);
@@ -47,16 +48,18 @@ void Hdiv_MixedCT(){
     
     // Add materials (weak formulation)
     TPZMixedDarcyFlow *matDarcy = new TPZMixedDarcyFlow(EMatId,2);
-    //TPZMixedDarcyFlow *matDarcyVugs= new TPZMixedDarcyFlow(EVugId,2); 
+    // TPZMixedDarcyFlow *matDarcyVugs= new TPZMixedDarcyFlow(EVugId,2); 
 
-    //TODO VERIFICAR SE É ISSO fazer para cada vug
-//    for(auto vugId: vugIds) {
-//        TPZMixedDarcyFlow *matDarcyVugs= new TPZMixedDarcyFlow(vugId,2);
-//        cmesh_mult->InsertMaterialObject(matDarcyVugs);
-//    }
+   for(auto vugId: vugIds) { //TODO Vug elements
+        //auto *matDarcyVugs= new TPZNullMaterialCS<REAL> (vugId,2,1);
+        //auto *matDarcyVugs= new TPZDarcyFlow (vugId,2);
+        auto *matDarcyVugs= new TPZL2ProjectionCS<REAL> (vugId,2,1);
+        matDarcyVugs->SetScaleFactor(0);
+        cmesh_mult->InsertMaterialObject(matDarcyVugs);
+   }
 
     cmesh_mult->InsertMaterialObject(matDarcy);
-    //cmesh_mult->InsertMaterialObject(matDarcyVugs);
+    // cmesh_mult->InsertMaterialObject(matDarcyVugs);
     matDarcy->SetConstantPermeability(0.01);
 
     int bc_id=2;
@@ -66,19 +69,21 @@ void Hdiv_MixedCT(){
     TPZVec<STATE> val2(1,0.0);
     int dim2d=2;
 
-    TPZBndCond * face2 = matDarcy->CreateBC(matDarcy,EbcNoFlux,bc_typeN,val1,val2);
+    val2[0]=1;
+    TPZBndCond * face2 = matDarcy->CreateBC(matDarcy,EbcNoFlux,bc_typeD,val1,val2);
     cmesh_mult->InsertMaterialObject(face2);
-    
-    val2[0]=100; // Valor a ser impuesto como presión en la entrada
+                
+    val2[0]=1; // Valor a ser impuesto como presión en la entrada
     TPZBndCond * face = matDarcy->CreateBC(matDarcy,EbcInletId,bc_typeD,val1,val2);
     cmesh_mult->InsertMaterialObject(face);
 
-    val2[0]=10; // Valor a ser impuesto como presión en la salida
+    val2[0]=1; // Valor a ser impuesto como presión en la salida
     TPZBndCond * face1 = matDarcy->CreateBC(matDarcy,EbcOutletId,bc_typeD,val1,val2);
     cmesh_mult->InsertMaterialObject(face1);
 
+
     //TODO Create comp elements of Vug Boundary
-    //val2[0] = 100;
+    val2[0] = 0;
     for(auto bcId: vugBcIds) {
         TPZBndCond *faceVug = matDarcy->CreateBC(matDarcy,bcId,bc_typeD,val1,val2);
         cmesh_mult->InsertMaterialObject(faceVug);
@@ -87,10 +92,11 @@ void Hdiv_MixedCT(){
     cmesh_mult->ExpandSolution();
     cmesh_mult->ApproxSpace().Style()= TPZCreateApproximationSpace::EMultiphysics;
     cmesh_mult->BuildMultiphysicsSpace(meshvec);
-    cmesh_mult->CleanUpUnconnectedNodes();
+    // cmesh_mult->CleanUpUnconnectedNodes();
 
-    //CreateInterfaceGeoEls(gmesh);
-    //InsertInterfaceEls(cmesh_mult, gmesh);
+    CreateInterfaceGeoEls(gmesh); //TODO Vug elements
+    InsertInterfaceEls(cmesh_mult, gmesh); //TODO Vug elements
+    SideOrientation(Flux_cmesh);
 
     TPZVTKGeoMesh::PrintGMeshVTK(gmesh, file20);
 
@@ -134,21 +140,22 @@ void Hdiv_MixedCT(){
     anMixed.Run();
 
         {
-          const std::string plotfile = "darcy_mixed";
+          const std::string plotfile = "Darcy_mixed";
           constexpr int vtkRes{0};
           TPZManVector<std::string, 2> fields = {"Flux", "Pressure"};
           auto vtk = TPZVTKGenerator(cmesh_mult, fields, plotfile, vtkRes);
           vtk.Do();
         }
-
+    PrintCompMesh(cmesh_mult);
         // --- Clean up ---
         delete cmesh_mult;
-
-    
 }
 
 
 int main (){
+#ifdef PZ_LOG
+    TPZLogger::InitializePZLOG();
+#endif
     Hdiv_MixedCT();
     return 0;
 }

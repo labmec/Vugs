@@ -38,7 +38,7 @@ TPZGeoMesh* generateGMeshWithPhysTagVec(std::string& filename, TPZManVector<std:
 void findElDim(TPZStack<TPZGeoElSide> &allneigh, int dim, TPZStack<TPZGeoElSide> &allneighdim);
 
 int H1Vugs();
-
+int H1Fracs();
 TPZGeoMesh* generateGMeshWithPhysTagVec(std::string& filename, TPZManVector<std::map<std::string,int>,4>& dim_name_and_physical_tagFine){
             
     // Creating gmsh reader
@@ -52,12 +52,27 @@ TPZGeoMesh* generateGMeshWithPhysTagVec(std::string& filename, TPZManVector<std:
     gmeshFine = GeometryFine.GeometricGmshMesh(filename,nullptr,false);
     return gmeshFine;
 }
+int H1Fracs(){
+    TPZGeoMesh *gmesh = new TPZGeoMesh;
+    TPZManVector<std::map<std::string,int>,4> dim_name_and_physical_tagCoarse(4);
+    dim_name_and_physical_tagCoarse[2]["k11"] = 1;
+    dim_name_and_physical_tagCoarse[1]["inlet"] = 2;
+    dim_name_and_physical_tagCoarse[1]["outlet"] = 3;
+    dim_name_and_physical_tagCoarse[1]["noflux"] = 4;
+    dim_name_and_physical_tagCoarse[1]["SmallFract"] = 5;
 
+
+    std::string filename="/Users/victorvillegassalabarria/Downloads/SingleFracture.msh";
+
+    gmesh = generateGMeshWithPhysTagVec(filename, dim_name_and_physical_tagCoarse);
+    std::ofstream file3("SingleFractureMesh.vtk");
+    TPZVTKGeoMesh::PrintGMeshVTK(gmesh, file3);
+    return 0;
+}
 int H1Vugs(){
       TPZGeoMesh *gmesh = new TPZGeoMesh;
       TPZManVector<std::map<std::string,int>,4> dim_name_and_physical_tagCoarse(4);
       dim_name_and_physical_tagCoarse[2]["k11"] = 1;
- 
       dim_name_and_physical_tagCoarse[2]["Vugs"] = 6;
       dim_name_and_physical_tagCoarse[1]["inlet"] = 2;
       dim_name_and_physical_tagCoarse[1]["outlet"] = 3;
@@ -345,8 +360,9 @@ TPZCompMesh *Pressuremesh(TPZGeoMesh *gmesh,int order){
     //devuelve una malla L2
 }
 int main (){
-    H1Vugs();
-    Hdiv_MixedCT();
+    //H1Vugs();
+    //Hdiv_MixedCT();
+    H1Fracs();
     return 0;
 }
 void insertAtomicMaterials(TPZCompMesh *cmesh, std::set<int> matIdsVol, std::set<int> matIdsBcs){

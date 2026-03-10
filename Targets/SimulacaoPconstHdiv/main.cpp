@@ -1,5 +1,5 @@
 #include "sources.h"
-
+//#include "sources.cpp"
 
 void Hdiv_MixedCT(){
     
@@ -13,10 +13,10 @@ void Hdiv_MixedCT(){
     dim_name_and_physical_tagCoarse[1]["noflux"] = EbcNoFlux;
     dim_name_and_physical_tagCoarse[2]["Vugs"] = 6;
     
-    //std::string filename="/Users/victorvillegassalabarria/python-test/testskelSLICE77SP.msh";
+    std::string filename="/Users/victorvillegassalabarria/python-test/testskelSLICE77SP.msh";
     //std::string filename="/Users/victorvillegassalabarria/Documents/Github/Vugs/FastMesh.msh";
     //std::string filename="/home/marina/programming/Stokes-Darcy-Research/VUGS/FastMesh.msh";
-    std::string filename="/Users/victorvillegassalabarria/Documents/Github/Vugs/FewVugsMesh.msh";
+    //std::string filename="/Users/victorvillegassalabarria/Documents/Github/Vugs/FewVugsMesh.msh";
     //std::string filename="/Users/victorvillegassalabarria/Downloads/MallaTriangles123.msh";
     
     std::ofstream file20("TestGeoMesh2D.vtk");
@@ -27,8 +27,13 @@ void Hdiv_MixedCT(){
     // std::ofstream file25("Test_cmeshMulti.txt");
 
     gmesh = generateGMeshWithPhysTagVec(filename, dim_name_and_physical_tagCoarse);
-    
-    MeshWithSegmentVugs(gmesh);
+    std::set<int> vugBcIds;
+    std::set<int> vugIds;
+
+    MeshWithSegmentVugs(gmesh, vugBcIds,vugIds);
+    std::cout<<"Vug bc index final2: "<<vugBcIds.size()<<std::endl;
+
+    //MeshWithSegmentVugs(gmesh, );
 
     std::set<int> volId, bcId;
     GetAtomicIds(gmesh, volId, bcId);
@@ -44,17 +49,20 @@ void Hdiv_MixedCT(){
     
     meshvec[0]= Flux_cmesh;
     meshvec[1]= Pressure_cmesh;
-    
+    SideOrientation(Flux_cmesh);
+
     // Add materials (weak formulation)
     TPZMixedDarcyFlow *matDarcy = new TPZMixedDarcyFlow(EMatId,2);
     //TPZMixedDarcyFlow *matDarcyVugs= new TPZMixedDarcyFlow(EVugId,2);
     //TPZMixedDarcyFlow *matDarcyVugs= new TPZMixedDarcyFlow(600,2);
 
     //TODO VERIFICAR SE É ISSO fazer para cada vug
-    for(auto vugId: vugIds) {
-        TPZMixedDarcyFlow *matDarcyVugs= new TPZMixedDarcyFlow(vugId,2);
-        cmesh_mult->InsertMaterialObject(matDarcyVugs);
-    }
+//    for(auto vugId: vugIds) {
+//        std::cout<<"Vug index: "<<vugId<<std::endl;
+//
+//        TPZMixedDarcyFlow *matDarcyVugs= new TPZMixedDarcyFlow(vugId,2);
+//        cmesh_mult->InsertMaterialObject(matDarcyVugs);
+//    }
 
     cmesh_mult->InsertMaterialObject(matDarcy);
     //cmesh_mult->InsertMaterialObject(matDarcyVugs);
@@ -70,33 +78,65 @@ void Hdiv_MixedCT(){
     TPZBndCond * face2 = matDarcy->CreateBC(matDarcy,EbcNoFlux,bc_typeN,val1,val2);
     cmesh_mult->InsertMaterialObject(face2);
     
-    val2[0]=10; // Valor a ser impuesto como presión en la entrada
+    val2[0]=100; // Valor a ser impuesto como presión en la entrada
     TPZBndCond * face = matDarcy->CreateBC(matDarcy,EbcInletId,bc_typeD,val1,val2);
     cmesh_mult->InsertMaterialObject(face);
 
-    val2[0]=100; // Valor a ser impuesto como presión en la salida
+    val2[0]=10; // Valor a ser impuesto como presión en la salida
     TPZBndCond * face1 = matDarcy->CreateBC(matDarcy,EbcOutletId,bc_typeD,val1,val2);
     cmesh_mult->InsertMaterialObject(face1);
 
     //TODO Create comp elements of Vug Boundary
+    //
+    //
+    //
+    //
 //    for(auto bcId: vugBcIds) {
+//        std::cout<<"Bc index: "<<bcId<<bcId>10<<std::endl;
+//        int PContornoVug=30;
+//        val2[0]=PContornoVug;
 //        TPZBndCond *faceVug = matDarcy->CreateBC(matDarcy,bcId,bc_typeD,val1,val2);
 //        cmesh_mult->InsertMaterialObject(faceVug);
+//
 //    }
-    int PContornoVug=-30;
-    val2[0]=PContornoVug;
-    TPZBndCond *faceVug = matDarcy->CreateBC(matDarcy,100,bc_typeD,val1,val2);
-    cmesh_mult->InsertMaterialObject(faceVug);
+    int Nvugs=vugBcIds.size();
+    for(int i=0;i<Nvugs-46;i++){
+        int bcId=0;
+        int PContornoVug=0;
+        if(i%2==0){
+             bcId=100+(2*i);
+             PContornoVug=90;
+        }
+        else{
+             bcId=100+(2*i)+1;
+             PContornoVug=30;
+
+        }
+        
+        std::cout<<"Bc index: "<<bcId<<std::endl;
+        val2[0]=PContornoVug;
+        TPZBndCond *faceVug = matDarcy->CreateBC(matDarcy,bcId,bc_typeD,val1,val2);
+        cmesh_mult->InsertMaterialObject(faceVug);
+       
+    }
+    //
+    //
+    //
+    //
+//    int PContornoVug=50;
+//    val2[0]=PContornoVug;
+//    TPZBndCond *faceVug = matDarcy->CreateBC(matDarcy,151,bc_typeD,val1,val2);
+//    cmesh_mult->InsertMaterialObject(faceVug);
 
     cmesh_mult->ExpandSolution();
     cmesh_mult->ApproxSpace().Style()= TPZCreateApproximationSpace::EMultiphysics;
     //SetUniqueVugConnect(gmesh, cmesh_mult);
 
     cmesh_mult->BuildMultiphysicsSpace(meshvec);
-
-    //CreateInterfaceGeoEls(gmesh);
-    //InsertInterfaceEls(cmesh_mult, gmesh);
-
+    cmesh_mult->CleanUpUnconnectedNodes();
+    CreateInterfaceGeoEls(gmesh);
+    InsertInterfaceEls(cmesh_mult, gmesh);
+    //SideOrientation(cmesh_mult);
     TPZVTKGeoMesh::PrintGMeshVTK(gmesh, file20);
 
     cmesh_mult->InitializeBlock();

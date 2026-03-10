@@ -49,8 +49,8 @@ enum MatID{
 };
 
 //TODO
-std::set<int> vugIds;
-std::set<int> vugBcIds;
+ std::set<int> vugIds;
+ std::set<int> vugBcIds;
 
 //TPZCompMesh* HdivMesh(TPZGeoMesh *);
 //TPZCompMesh* Pressuremesh(TPZGeoMesh *, int order);
@@ -65,7 +65,7 @@ void insertAtomicMaterials(TPZCompMesh *cmesh, std::set<int> matIdsVol, std::set
 
 void SetUniqueVugConnect(TPZGeoMesh *gmesh, TPZCompMesh *cmesh);
 
-void MeshWithSegmentVugs(TPZGeoMesh *gmesh);
+void MeshWithSegmentVugs(TPZGeoMesh *gmesh, std::set<int>  &vugBcIds, std::set<int> &vugIds);
 
 void PrintCompMesh(TPZCompMesh *cmesh);
 
@@ -80,3 +80,4 @@ void findElDim(TPZStack<TPZGeoElSide> &allneigh, int dim, TPZStack<TPZGeoElSide>
 void PrintCompMesh(TPZCompMesh *cmesh);
 void insertAtomicMaterialsf(TPZCompMesh *cmesh, std::set<int> matIdsVol, std::set<int> matIdsBcs);
 void insertAtomicMaterialsp(TPZCompMesh *cmesh, std::set<int> matIdsVol, std::set<int> matIdsBcs);
+void SideOrientation(TPZCompMesh *cmesh);

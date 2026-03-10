@@ -2,7 +2,10 @@
 #define SOURCES_H
 
 #include "sources.h"
-
+#include "pzintel.h"
+#include "TPZMultiphysicsCompMesh.h"
+#include "TPZHDivApproxCreator.h"
+#include "TPZLagrangeMultiplierCS.h"
 
 TPZGeoMesh* generateGMeshWithPhysTagVec(std::string& filename, TPZManVector<std::map<std::string,int>,4>& dim_name_and_physical_tagFine){
 
@@ -17,7 +20,8 @@ TPZGeoMesh* generateGMeshWithPhysTagVec(std::string& filename, TPZManVector<std:
     return gmeshFine;
 }
 
-void MeshWithSegmentVugs(TPZGeoMesh *gmesh ){
+
+void MeshWithSegmentVugs(TPZGeoMesh *gmesh, std::set<int> &vugBcIds,std::set<int> &vugIds){
     int ncreated = 0;
     int nels = gmesh->NElements();
     int matid_vug=6;
@@ -49,8 +53,10 @@ void MeshWithSegmentVugs(TPZGeoMesh *gmesh ){
             TPZGeoEl *gelcheck = gmesh->Element(elcheck);
             verificador[elcheck] = mat;
             gelcheck->SetMaterialId(mat+500);  
-            vugBcIds.insert(mat); //TODO MELHORAR ISSO
-            vugIds.insert(mat+500);        
+            //vugBcIds.insert(mat); //TODO MELHORAR ISSO
+            vugIds.insert(mat+500);
+            vugBcIds.insert(mat);
+
             int nsides   = gelcheck->NSides();
             int ncorners = gelcheck->NCornerNodes();
             int firstside = nsides - ncorners - 1;
@@ -59,9 +65,10 @@ void MeshWithSegmentVugs(TPZGeoMesh *gmesh ){
                 TPZGeoElSide gelside(gelcheck, iside);
                 bool hasDarcyNeigh = gelside.HasNeighbour(matDarcytag);
                 bool hasVugBound   = gelside.HasNeighbour(matid_Vugbound);
-
                 if(hasDarcyNeigh && !hasVugBound){
                     gelside.Element()->CreateBCGeoEl(iside, mat);
+                    //vugBcIds.insert(mat);
+                    std::cout<<"Vug bc index: "<<vugBcIds.size()<<std::endl;
                     hasVugBound = true;
                 }
                 TPZGeoElSide neighbour = gelside.Neighbour();
@@ -82,6 +89,8 @@ void MeshWithSegmentVugs(TPZGeoMesh *gmesh ){
         mat++;
         ncreated++;
     }
+    std::cout<<"Vug bc index final: "<<vugBcIds.size()<<std::endl;
+
 }
 
 void SetUniqueVugConnect(TPZGeoMesh *gmesh, TPZCompMesh *cmesh){
@@ -145,26 +154,45 @@ void insertAtomicMaterials(TPZCompMesh *cmesh, std::set<int> matIdsVol, std::set
                 TPZBndCond * face2 = matDarcy->CreateBC(matDarcy,EbcNoFlux,bc_typeN,val1,val2);
                 cmesh->InsertMaterialObject(face2);
                 
-                val2[0]=10; // Valor a ser impuesto como presión en la entrada
+                val2[0]=100; // Valor a ser impuesto como presión en la entrada
                 TPZBndCond * face = matDarcy->CreateBC(matDarcy,EbcInletId,bc_typeD,val1,val2);
                 cmesh->InsertMaterialObject(face);
 
-                val2[0]=100; // Valor a ser impuesto como presión en la salida
+                val2[0]=10; // Valor a ser impuesto como presión en la salida
                 TPZBndCond * face1 = matDarcy->CreateBC(matDarcy,EbcOutletId,bc_typeD,val1,val2);
                 cmesh->InsertMaterialObject(face1);
-                val2[0]=-30;
-                TPZBndCond *faceVug = matDarcy->CreateBC(matDarcy,100,bc_typeD,val1,val2);
-                cmesh->InsertMaterialObject(faceVug);
+                //val2[0]=30;
+//                for(auto bcId: vugBcIds) {
+//                    val2[0]=30;
+//                    TPZBndCond *faceVug = matDarcy->CreateBC(matDarcy,bcId,bc_typeD,val1,val2);
+//                    cmesh->InsertMaterialObject(faceVug);
+//                }
+                //int PContornoVug=-50;
+                //val2[0]=PContornoVug;
+                //TPZBndCond *faceVug = matDarcy->CreateBC(matDarcy,100,bc_typeD,val1,val2);
+                //cmesh->InsertMaterialObject(faceVug);
+                //TPZBndCond *faceVug1 = matDarcy->CreateBC(matDarcy,101,bc_typeD,val1,val2);
+                //cmesh->InsertMaterialObject(faceVug1);
+                //TPZBndCond *faceVug2 = matDarcy->CreateBC(matDarcy,102,bc_typeD,val1,val2);
+                //cmesh->InsertMaterialObject(faceVug2);
+                //TPZBndCond *faceVug3 = matDarcy->CreateBC(matDarcy,103,bc_typeD,val1,val2);
+                //cmesh->InsertMaterialObject(faceVug3);
+                
+                
             }
             else if(iD>499)continue;
+
+            //
                         
         }
+        
         for (auto iD:matIdsBcs) {
 //            TPZNullMaterial <STATE> *matDarcy = new TPZNullMaterial(iD, dim);
 //            cmesh->InsertMaterialObject(matDarcy);
             if (!iD){
             TPZNullMaterial<STATE> * face2 = new TPZNullMaterial(iD, dim-1);
             cmesh->InsertMaterialObject(face2);
+            std::cout<<"Bc Flux: "<<iD<<std::endl;
             }
 
         }
@@ -177,16 +205,16 @@ void insertAtomicMaterials(TPZCompMesh *cmesh, std::set<int> matIdsVol, std::set
             cmesh->InsertMaterialObject(matDarcy);
             }
         }
-        for (auto iD:matIdsBcs) {
-            if(iD<99){
-            std::cout<<"Material: "<<iD<<std::endl;
-
-            TPZNullMaterial<STATE> * face2 = new TPZNullMaterial(iD, dim-1);
-            cmesh->InsertMaterialObject(face2);
-            }
-            else if(iD>99)continue;
-
-        }
+//        for (auto iD:matIdsBcs) {
+//            if(iD<99){
+//            std::cout<<"Material: "<<iD<<std::endl;
+//
+//            TPZNullMaterial<STATE> * face2 = new TPZNullMaterial(iD, dim-1);
+//            cmesh->InsertMaterialObject(face2);
+//            }
+//            else if(iD>99)continue;
+//
+//        }
     }
 
 }
@@ -216,7 +244,7 @@ TPZCompMesh *CreateFluxMesh(TPZGeoMesh *gmesh, std::set<int> &volId, std::set<in
     cmesh->SetName("FluxMesh");
      
     //GetAtomicIds(gmesh, volId, bcId);
-    insertAtomicMaterials(cmesh, volId, bcId,typeMesh);
+    insertAtomicMaterialsf(cmesh, volId, bcId);
     
     //int pOrder=1;
     int pOrder=1;
@@ -250,7 +278,7 @@ TPZCompMesh *CreatePressureMesh(TPZGeoMesh *gmesh, std::set<int> &volId, std::se
             cmesh->ApproxSpace().CreateDisconnectedElements(true);
         }
     
-    insertAtomicMaterials(cmesh, volId, bcId,TypeMesh);
+    insertAtomicMaterialsp(cmesh, volId, bcId);
     
     
     cmesh->AutoBuild();
@@ -259,7 +287,7 @@ TPZCompMesh *CreatePressureMesh(TPZGeoMesh *gmesh, std::set<int> &volId, std::se
         int64_t ncon = cmesh->NConnects();
         for(int64_t i=0; i<ncon; i++){
             TPZConnect &newnod = cmesh->ConnectVec()[i];
-            newnod.SetLagrangeMultiplier(1);
+            newnod.SetLagrangeMultiplier(2);
         }
     }
 
@@ -347,6 +375,7 @@ void insertAtomicMaterialsf(TPZCompMesh *cmesh, std::set<int> matIdsVol, std::se
     int dim = cmesh->Dimension();
     
     for (auto iD:matIdsVol) {
+        if(iD==1){
         TPZNullMaterial <STATE> *matDarcy = new TPZNullMaterial(iD, dim);
         cmesh->InsertMaterialObject(matDarcy);
         
@@ -360,7 +389,7 @@ void insertAtomicMaterialsf(TPZCompMesh *cmesh, std::set<int> matIdsVol, std::se
         TPZBndCond * face2 = matDarcy->CreateBC(matDarcy,EbcNoFlux,bc_typeN,val1,val2);
         cmesh->InsertMaterialObject(face2);
         
-        val2[0]=1000; // Valor a ser impuesto como presión en la entrada
+        val2[0]=100; // Valor a ser impuesto como presión en la entrada
         
         TPZBndCond * face = matDarcy->CreateBC(matDarcy,EbcInletId,bc_typeD,val1,val2);
         cmesh->InsertMaterialObject(face);
@@ -369,6 +398,39 @@ void insertAtomicMaterialsf(TPZCompMesh *cmesh, std::set<int> matIdsVol, std::se
         TPZBndCond * face1 = matDarcy->CreateBC(matDarcy,EbcOutletId,bc_typeD,val1,val2);
 
         cmesh->InsertMaterialObject(face1);
+//            int PContornoVug=50;
+//            val2[0]=PContornoVug;
+//            TPZBndCond *faceVug = matDarcy->CreateBC(matDarcy,151,bc_typeD,val1,val2);
+//            cmesh->InsertMaterialObject(faceVug);
+//            for(auto bcId: vugBcIds) {
+//                if(99<bcId<150){
+//                std::cout<<"Bc index: "<<bcId<<std::endl;
+//                int PContornoVug=30;
+//                val2[0]=PContornoVug;
+//                TPZBndCond *faceVug = matDarcy->CreateBC(matDarcy,bcId,bc_typeD,val1,val2);
+//                cmesh->InsertMaterialObject(faceVug);
+//                }
+//            }
+            for(int i=0;i<44;i++){
+                int bcId=0;
+                int PContornoVug=0;
+                if(i%2==0){
+                     bcId=100+(2*i);
+                     PContornoVug=90;
+                }
+                else{
+                     bcId=100+(2*i)+1;
+                    PContornoVug=30;
+
+                }
+                std::cout<<"Bc index: "<<bcId<<std::endl;
+                val2[0]=PContornoVug;
+                TPZBndCond *faceVug = matDarcy->CreateBC(matDarcy,bcId,bc_typeD,val1,val2);
+                cmesh->InsertMaterialObject(faceVug);
+               
+            }
+    
+        }
       
     }
     for (auto iD:matIdsBcs) {
@@ -393,6 +455,31 @@ void insertAtomicMaterialsp(TPZCompMesh *cmesh, std::set<int> matIdsVol, std::se
 
     }
 }
+void SideOrientation(TPZCompMesh *cmesh){ //CheckSideOrientation(TPZCompMesh *cmesh, TPZInterpolationSpace *intEl);
 
+    for(int el = 0; el < cmesh->NElements(); el++){
+        TPZCompEl *cel = cmesh->Element(el);
+        TPZGeoEl *gel = cel->Reference();
+        
+        //if(gel->MaterialId() < EVugBcId || gel->MaterialId() >= EVugId) continue;
+        if(gel->MaterialId() != EMatId) continue;
+        
+        int nSides = gel->NSides();
+        int nNodeSides = gel->NCornerNodes();
+
+        for(int side = nNodeSides; side < nSides-1; side++){
+            TPZGeoElSide gelSide(gel, side);
+            TPZGeoElSide neigh = gelSide.HasNeighbour(vugBcIds);
+            if(neigh){
+                TPZInterpolatedElement *intel = dynamic_cast<TPZInterpolatedElement *>(cel);
+                int orientation = intel->GetSideOrient(side);
+                //std::cout << orientation << "\n";
+                //int orientation = gel->NormalOrientation(side);
+                intel->SetSideOrient(side, 1.);
+                //std::cout << intel->GetSideOrient(side) << "\n";
+            }
+        }
+    }
+}
 
 #endif

@@ -53,6 +53,9 @@ enum MatID{
 //TPZCompMesh* HdivMesh(TPZGeoMesh *);
 //TPZCompMesh* Pressuremesh(TPZGeoMesh *, int order);
 
+extern std::set<int> vugBcIds;
+extern std::set<int> vugIds;
+
 TPZCompMesh *CreateFluxMesh(TPZGeoMesh *, std::set<int> &volId, std::set<int> &bcId, int &orderp);
 
 TPZCompMesh *CreatePressureMesh(TPZGeoMesh *,std::set<int> &volId, std::set<int> &bcId,int order);
@@ -63,7 +66,7 @@ void insertAtomicMaterials(TPZCompMesh *cmesh, std::set<int> matIdsVol, std::set
 
 void SetUniqueVugConnect(TPZGeoMesh *gmesh, TPZCompMesh *cmesh);
 
-void MeshWithSegmentVugs(TPZGeoMesh *gmesh, std::set<int> &vugIds, std::set<int> &vugBcIds);
+void MeshWithSegmentVugs(TPZGeoMesh *gmesh);
 
 void PrintCompMesh(TPZCompMesh *cmesh);
 

@@ -3,7 +3,8 @@
 
 #include "sources.h"
 
-
+std::set<int> vugBcIds;
+std::set<int> vugIds;
 
 TPZGeoMesh* generateGMeshWithPhysTagVec(std::string& filename, TPZManVector<std::map<std::string,int>,4>& dim_name_and_physical_tagFine){
 
@@ -18,7 +19,7 @@ TPZGeoMesh* generateGMeshWithPhysTagVec(std::string& filename, TPZManVector<std:
     return gmeshFine;
 }
 
-void MeshWithSegmentVugs(TPZGeoMesh *gmesh, std::set<int> &vugIds, std::set<int> &vugBcIds){
+void MeshWithSegmentVugs(TPZGeoMesh *gmesh){
     int ncreated = 0;
     int nels = gmesh->NElements();
     int matid_vug=6;
@@ -469,15 +470,15 @@ void insertAtomicMaterialsf(TPZCompMesh *cmesh, std::set<int> matIdsVol, std::se
         TPZVec<STATE> val2(1,0.0);
         int dim2d=2;
 
-        TPZBndCond * face2 = matDarcy->CreateBC(matDarcy,EbcNoFlux,bc_typeN,val1,val2);
+        TPZBndCond * face2 = matDarcy->CreateBC(matDarcy,EbcNoFlux,bc_typeD,val1,val2);
         cmesh->InsertMaterialObject(face2);
         
-        val2[0]=100; // Valor a ser impuesto como presión en la entrada
+        //val2[0]=1000; // Valor a ser impuesto como presión en la entrada
         
         TPZBndCond * face = matDarcy->CreateBC(matDarcy,EbcInletId,bc_typeD,val1,val2);
         cmesh->InsertMaterialObject(face);
       
-        val2[0]=10; // Valor a ser impuesto como presión en la salida
+        //val2[0]=10; // Valor a ser impuesto como presión en la salida
         TPZBndCond * face1 = matDarcy->CreateBC(matDarcy,EbcOutletId,bc_typeD,val1,val2);
         cmesh->InsertMaterialObject(face1);
       

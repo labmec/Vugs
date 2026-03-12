@@ -1,6 +1,7 @@
 #include "sources.h"
 #include "pzlog.h"
 #include "Projection/TPZL2ProjectionCS.h"
+#include "Elasticity/TPZMixedElasticityND.h"
 
 void Hdiv_MixedCT(){
     
@@ -15,7 +16,7 @@ void Hdiv_MixedCT(){
     dim_name_and_physical_tagCoarse[1]["noflux"] = EbcNoFlux;
 
     
-    //std::string filename="/Users/victorvillegassalabarria/python-test/testskelSLICE77SP.msh";
+    //std::string filename="/home/marina/programming/Stokes-Darcy-Research/VUGS/testskelSLICE77SP.msh";
     //std::string filename="/Users/victorvillegassalabarria/Documents/Github/Vugs/FastMesh.msh";
     std::string filename="/home/marina/programming/Stokes-Darcy-Research/VUGS/FastMesh.msh";
     //std::string filename="/home/marina/programming/Stokes-Darcy-Research/VUGS/FewVugsMesh.msh";
@@ -33,8 +34,9 @@ void Hdiv_MixedCT(){
     // std::ofstream file25("Test_cmeshMulti.txt");
 
     gmesh = generateGMeshWithPhysTagVec(filename, dim_name_and_physical_tagCoarse);
-    
-    MeshWithSegmentVugs(gmesh); //!FAZER COM QUE ESSA FUNÇÃO RETORNE OS SETS THE IDS
+
+
+    MeshWithSegmentVugs(gmesh);
 
     std::set<int> volId, bcId;
     GetAtomicIds(gmesh, volId, bcId);
@@ -54,9 +56,9 @@ void Hdiv_MixedCT(){
 
    for(auto vugId: vugIds) { //TODO Vug elements
         //auto *matDarcyVugs= new TPZNullMaterialCS<REAL> (vugId,2,1);
-        //auto *matDarcyVugs= new TPZDarcyFlow (vugId,2);
-        auto *matDarcyVugs= new TPZL2ProjectionCS<REAL> (vugId,2,1);
-        matDarcyVugs->SetScaleFactor(0);
+        auto *matDarcyVugs= new TPZMixedDarcyFlow (vugId,2);
+        //auto *matDarcyVugs = new TPZL2ProjectionCS<REAL> (vugId,2,1);
+        //matDarcyVugs->SetScaleFactor(0);
         cmesh_mult->InsertMaterialObject(matDarcyVugs);
    }
 
@@ -79,7 +81,7 @@ void Hdiv_MixedCT(){
     TPZBndCond * face = matDarcy->CreateBC(matDarcy,EbcInletId,bc_typeD,val1,val2);
     cmesh_mult->InsertMaterialObject(face);
 
-    val2[0]=1; // Valor a ser impuesto como presión en la salida
+    val2[0]=10; // Valor a ser impuesto como presión en la salida
     TPZBndCond * face1 = matDarcy->CreateBC(matDarcy,EbcOutletId,bc_typeD,val1,val2);
     cmesh_mult->InsertMaterialObject(face1);
 
@@ -115,7 +117,6 @@ void Hdiv_MixedCT(){
 
     PrintCompMesh(Flux_cmesh);
     PrintCompMesh(Pressure_cmesh);
-    PrintCompMesh(cmesh_mult);
 
     const std::string strShape = "Shape.vtk";
     TPZVec<int64_t> eqIndices(4, 0);
@@ -128,12 +129,11 @@ void Hdiv_MixedCT(){
 //    Analisys->ShowShape(strShape, eqIndices);
 
 
-    cmesh_mult->Reference()->ResetReference();
-    cmesh_mult->LoadReferences();
+    // cmesh_mult->Reference()->ResetReference();
+    // cmesh_mult->LoadReferences();
     //TPZLinearAnalysis anMixed(cmesh_mult,RenumType::EMetis);
     TPZLinearAnalysis anMixed(cmesh_mult,RenumType::EMetis);
 
-    //anMixed->ShowShape(strShape, eqIndices);//new TPZLinearAnalysis(cmesh_mult);
     #ifdef PZ_USING_MKL
     TPZSSpStructMatrix<STATE> matMixed(cmesh_mult);
     #else

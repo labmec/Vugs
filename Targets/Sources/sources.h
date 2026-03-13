@@ -43,10 +43,11 @@ enum MatID{
     EMatId = 1,
     EVugId = 600,
     EVugBcId = 100,
+    EFracId = 5, //TODO Change
     EbcInletId = 2,
     EbcOutletId = 3,
     EbcNoFlux = 4,
-    ELagrange = 5
+    ELagrange = 6
 };
 
 //TPZCompMesh* HdivMesh(TPZGeoMesh *);
@@ -54,6 +55,9 @@ enum MatID{
 
 extern std::set<int> vugBcIds;
 extern std::set<int> vugIds;
+
+extern std::set<int> fracBcIds;
+extern std::set<int> fracIds;
 
 TPZCompMesh *CreateFluxMesh(TPZGeoMesh *, std::set<int> &volId, std::set<int> &bcId, int &orderp);
 

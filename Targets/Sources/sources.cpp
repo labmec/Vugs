@@ -6,6 +6,9 @@
 std::set<int> vugBcIds;
 std::set<int> vugIds;
 
+std::set<int> fracBcIds;
+std::set<int> fracIds;
+
 TPZGeoMesh* generateGMeshWithPhysTagVec(std::string& filename, TPZManVector<std::map<std::string,int>,4>& dim_name_and_physical_tagFine){
 
     TPZGmshReader  GeometryFine;
@@ -19,10 +22,86 @@ TPZGeoMesh* generateGMeshWithPhysTagVec(std::string& filename, TPZManVector<std:
     return gmeshFine;
 }
 
+// void MeshWithSegmentVugs(TPZGeoMesh *gmesh){
+//     int ncreated = 0;
+//     int nels = gmesh->NElements();
+//     int matid_vug=6;
+//     int matid_frac=5;
+//     int matDarcytag=1;
+//     int meshdim=gmesh->Dimension();
+//     int matid_Vugbound=100;
+
+//     int mat = 100;
+
+//     TPZVec<int64_t> verificador(nels,-1);
+  
+//     for(int el = 0; el < nels; el++){
+//         TPZGeoEl *gel = gmesh->Element(el);
+//         if(!gel) continue;
+
+//         //if(gel->MaterialId() != matid_vug) continue;
+//         if(gel->MaterialId() != matid_frac) continue;
+
+//         if(verificador[el] != -1) continue;
+
+//         TPZStack<int64_t> tocheck;
+//         tocheck.Push(el); 
+
+//         while(tocheck.size()){
+
+//             int64_t elcheck = tocheck.Pop(); 
+
+//             if(verificador[elcheck] != -1) continue; 
+
+//             TPZGeoEl *gelcheck = gmesh->Element(elcheck); 
+//             verificador[elcheck] = mat; 
+//             gelcheck->SetMaterialId(mat+500);  
+//             // vugBcIds.insert(mat); //TODO MELHORAR ISSO
+//             // vugIds.insert(mat+500); 
+//             fracBcIds.insert(mat); 
+//             fracIds.insert(mat+500);      
+//             int nsides   = gelcheck->NSides();
+//             int ncorners = gelcheck->NCornerNodes();
+//             int firstside = nsides - ncorners - 1;
+
+//             for(int iside = firstside; iside < nsides; iside++){
+                
+//                 TPZGeoElSide gelside(gelcheck, iside);
+//                 TPZStack<TPZGeoElSide> allneigh;
+//                 gelside.AllNeighbours(allneigh);
+//                 bool hasDarcyNeigh = gelside.HasNeighbour(matDarcytag);
+//                 bool hasVugBound   = gelside.HasNeighbour(matid_Vugbound);
+
+//                 if(hasDarcyNeigh && !hasVugBound){
+//                     gelside.Element()->CreateBCGeoEl(iside, mat);
+//                     hasVugBound = true;
+//                 }
+//                 TPZGeoElSide neighbour = gelside.Neighbour();
+//                 TPZGeoEl *neighgel = neighbour.Element();
+
+//                 if(hasVugBound){
+//                     neighgel->SetMaterialId(mat);
+//                 }
+
+//                 else if(!hasDarcyNeigh){
+//                     int64_t neighindex = neighgel->Index();
+//                     if(verificador[neighindex] == -1)
+//                         tocheck.Push(neighindex);
+//                 } 
+//             }
+//         }
+//       // incrementamos o valor de mat, para o seguinte vug.
+//         mat++;
+//         ncreated++;
+//     }
+// }
+
 void MeshWithSegmentVugs(TPZGeoMesh *gmesh){
     int ncreated = 0;
     int nels = gmesh->NElements();
     int matid_vug=6;
+    int matid_frac=5;
+    int matDarcytag=1;
     int meshdim=gmesh->Dimension();
 
     int mat = 100;
@@ -33,25 +112,28 @@ void MeshWithSegmentVugs(TPZGeoMesh *gmesh){
         TPZGeoEl *gel = gmesh->Element(el);
         if(!gel) continue;
 
-        if(gel->MaterialId() != matid_vug) continue;
+        //if(gel->MaterialId() != matid_vug) continue;
+        if(gel->MaterialId() != matid_frac) continue;
 
         if(verificador[el] != -1) continue;
 
         TPZStack<int64_t> tocheck;
-        tocheck.Push(el);
+        tocheck.Push(el); 
 
         while(tocheck.size()){
 
-            int64_t elcheck = tocheck.Pop();
+            int64_t elcheck = tocheck.Pop(); 
 
-            if(verificador[elcheck] != -1) continue;
+            if(verificador[elcheck] != -1) continue; 
 
-            TPZGeoEl *gelcheck = gmesh->Element(elcheck);
-            verificador[elcheck] = mat+500;
-            gelcheck->SetMaterialId(mat+500);
+            TPZGeoEl *gelcheck = gmesh->Element(elcheck); 
+            verificador[elcheck] = mat+500; 
+            gelcheck->SetMaterialId(mat+500);  
 
-            vugBcIds.insert(mat);
-            vugIds.insert(mat+500);
+            // vugBcIds.insert(mat); //TODO MELHORAR ISSO
+            // vugIds.insert(mat+500); 
+            fracBcIds.insert(mat); 
+            fracIds.insert(mat+500); 
 
             int nsides   = gelcheck->NSides();
             int ncorners = gelcheck->NCornerNodes();
@@ -59,21 +141,19 @@ void MeshWithSegmentVugs(TPZGeoMesh *gmesh){
 
             for(int iside = firstside; iside < nsides; iside++){
                 
+                
                 TPZGeoElSide gelside(gelcheck, iside);
                 TPZStack<TPZGeoElSide> allneigh;
-
                 gelside.AllNeighbours(allneigh);
+
                 for(auto neigh: allneigh){
                     TPZGeoEl* gelNeigh = neigh.Element();
-                    if(gelNeigh->MaterialId() == EMatId && gelside.Dimension() == gmesh->Dimension()-1){ // if the neighbor is darcy
-                       gelside.Element()->CreateBCGeoEl(iside, mat);
-                    }
-                    if(gelNeigh->MaterialId() == matid_vug){ // if the neighbor is a frac
+                    if(gelNeigh->MaterialId() == matid_frac){
                         gelNeigh->SetMaterialId(mat+500);
-                        //verificador[gelNeigh->Index()] = mat+500;
+                        verificador[gelNeigh->Index()] = mat+500; 
                         tocheck.Push(gelNeigh->Index());
                     }
-                }
+                }  
             }
         }
       // incrementamos o valor de mat, para o seguinte vug.
@@ -140,7 +220,7 @@ void insertAtomicMaterials(TPZCompMesh *cmesh, std::set<int> matIdsVol, std::set
                 TPZVec<STATE> val2(1,0.0);
                 int dim2d=2;
 
-                TPZBndCond * face2 = matDarcy->CreateBC(matDarcy,EbcNoFlux,bc_typeD,val1,val2);
+                TPZBndCond * face2 = matDarcy->CreateBC(matDarcy,EbcNoFlux,bc_typeN,val1,val2);
                 cmesh->InsertMaterialObject(face2);
                 
                 //val2[0]=10; // Valor a ser impuesto como presión en la entrada

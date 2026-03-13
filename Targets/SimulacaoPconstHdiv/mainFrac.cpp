@@ -6,49 +6,44 @@
 void Hdiv_MixedCT(){
     
     TPZGeoMesh *gmesh = new TPZGeoMesh;
-
     TPZManVector<std::map<std::string,int>,4> dim_name_and_physical_tagCoarse(4);
-    dim_name_and_physical_tagCoarse[2]["k11"] = EMatId;
-    dim_name_and_physical_tagCoarse[2]["Vugs"] = EVugId;
-    dim_name_and_physical_tagCoarse[1]["inlet"] = EbcInletId;
-    dim_name_and_physical_tagCoarse[1]["outlet"] = EbcOutletId;
-    dim_name_and_physical_tagCoarse[1]["noflux"] = EbcNoFlux;
+    dim_name_and_physical_tagCoarse[2]["k11"] = 1;
+    dim_name_and_physical_tagCoarse[1]["inlet"] = 2;
+    dim_name_and_physical_tagCoarse[1]["outlet"] = 3;
+    dim_name_and_physical_tagCoarse[1]["noflux"] = 4;
+    dim_name_and_physical_tagCoarse[1]["SmallFract"] = 5;
 
-    
-    std::string filename="/home/marina/programming/Stokes-Darcy-Research/VUGS/Meshes/testskelSLICE77SP.msh";
-    //std::string filename="/Users/victorvillegassalabarria/Documents/Github/Vugs/FastMesh.msh";
-    //std::string filename="/home/marina/programming/Stokes-Darcy-Research/VUGS/Meshes/FastMesh.msh";
-    //std::string filename="/home/marina/programming/Stokes-Darcy-Research/VUGS/Meshes/SingleFracture.msh";
-    //std::string filename="/home/marina/programming/Stokes-Darcy-Research/VUGS/FewVugsMesh.msh";
-    std::string filename="/home/marina/programming/Stokes-Darcy-Research/VUGS/FastMesh.msh";
-    //std::string filename="/home/itopo/Stokes-Darcy_Research/Vugs/testskelSLICE77SP.msh";
+
+    std::string filename="/home/marina/programming/Stokes-Darcy-Research/VUGS/Meshes/SingleFracture.msh";
 
     gmesh = generateGMeshWithPhysTagVec(filename, dim_name_and_physical_tagCoarse);
-
     
-    std::ofstream file20("TestGeoMesh2D.vtk");
+    std::ofstream file3("SingleFractureMesh.vtk");
     // std::ofstream file21("Test_cmeshFlux.vtk");
     // std::ofstream file22("Test_cmeshPressure.vtk");
     // std::ofstream file23("Test_cmeshPressure.txt");
     // std::ofstream file24("Test_cmeshFlux.txt"); 
     // std::ofstream file25("Test_cmeshMulti.txt");
 
-    gmesh = generateGMeshWithPhysTagVec(filename, dim_name_and_physical_tagCoarse);
-
+    //TPZVTKGeoMesh::PrintGMeshVTK(gmesh, file3);
 
     MeshWithSegmentVugs(gmesh);
 
+    TPZVTKGeoMesh::PrintGMeshVTK(gmesh, file3);
     std::set<int> volId, bcId;
     GetAtomicIds(gmesh, volId, bcId);
-    TPZCompMesh *Flux_cmesh = CreateFluxMesh(gmesh,volId,bcId);
-    TPZCompMesh *Pressure_cmesh = CreatePressureMesh(gmesh,volId,bcId,0);
+    int orderp=1;
+
+    TPZCompMesh *Flux_cmesh=CreateFluxMesh(gmesh,volId,bcId,orderp);
+    
+    TPZCompMesh *Pressure_cmesh=CreatePressureMesh(gmesh,volId,bcId,orderp);
     
     TPZMultiphysicsCompMesh *cmesh_mult= new TPZMultiphysicsCompMesh(gmesh);
+    cmesh_mult->SetName("MultiMesh");
     TPZVec<TPZCompMesh *> meshvec(2);
     
     meshvec[0]= Flux_cmesh;
     meshvec[1]= Pressure_cmesh;
-    
     
     // Add materials (weak formulation)
     TPZMixedDarcyFlow *matDarcy = new TPZMixedDarcyFlow(EMatId,2);
@@ -65,19 +60,19 @@ void Hdiv_MixedCT(){
     cmesh_mult->InsertMaterialObject(matDarcy);
     // cmesh_mult->InsertMaterialObject(matDarcyVugs);
     matDarcy->SetConstantPermeability(0.01);
-    
+
+    int bc_id=2;
     int bc_typeN = 1;
     int bc_typeD = 0;
     TPZFMatrix<STATE> val1(1,1,0.0);
     TPZVec<STATE> val2(1,0.0);
     int dim2d=2;
-    int dim2d=2;
 
-    val2[0]=0;
-    TPZBndCond * face2 = matDarcy->CreateBC(matDarcy,EbcNoFlux,bc_typeN,val1,val2);
+    val2[0]=1;
+    TPZBndCond * face2 = matDarcy->CreateBC(matDarcy,EbcNoFlux,bc_typeD,val1,val2);
     cmesh_mult->InsertMaterialObject(face2);
                 
-    val2[0]=100; // Valor a ser impuesto como presión en la entrada
+    val2[0]=1; // Valor a ser impuesto como presión en la entrada
     TPZBndCond * face = matDarcy->CreateBC(matDarcy,EbcInletId,bc_typeD,val1,val2);
     cmesh_mult->InsertMaterialObject(face);
 
@@ -102,15 +97,10 @@ void Hdiv_MixedCT(){
     InsertInterfaceEls(cmesh_mult, gmesh); //TODO Vug elements
     SideOrientation(Flux_cmesh);
 
-    PrintCompMesh(Pressure_cmesh);
-    PrintCompMesh(Flux_cmesh);
+    TPZVTKGeoMesh::PrintGMeshVTK(gmesh, file3);
 
     cmesh_mult->InitializeBlock();
-    std::cout<<cmesh_mult->Element(1)<<std::endl;
-    
-    CreateInterfaceGeoEls(gmesh);
-    InsertInterfaceEls(cmesh_mult, gmesh); //TODO
-        
+    //std::cout<<cmesh_mult->Element(1)<<std::endl;
     bool mustOp = false;
 
     //Show Shape

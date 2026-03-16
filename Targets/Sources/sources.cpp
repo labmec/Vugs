@@ -434,7 +434,12 @@ void CreateInterfaceGeoEls(TPZGeoMesh *gmesh){
         TPZGeoElSide neighSide = gelSide.HasNeighbour(EVugId);
 
         for (auto id: vugIds){
-            neighSide = gelSide.HasNeighbour(id); //TODO VERIFY
+            neighSide = gelSide.HasNeighbour(id); 
+            if(neighSide) break;
+        }
+
+        for (auto id: fracIds){
+            neighSide = gelSide.HasNeighbour(id); 
             if(neighSide) break;
         }
 
@@ -473,6 +478,16 @@ void InsertInterfaceEls(TPZMultiphysicsCompMesh *cmesh, TPZGeoMesh *gmesh){
         }
 
         for (auto id: vugBcIds){
+            neighHdiv = gelSide.HasNeighbour(id).Reference();
+            if(neighHdiv) break;
+        }
+
+        for (auto id: fracIds){
+            neighVug = gelSide.HasNeighbour(id).Reference();
+            if(neighVug) break;
+        }
+
+        for (auto id: fracBcIds){
             neighHdiv = gelSide.HasNeighbour(id).Reference();
             if(neighHdiv) break;
         }
@@ -572,5 +587,27 @@ void insertAtomicMaterialsp(TPZCompMesh *cmesh, std::set<int> matIdsVol, std::se
     }
 }
 
+void DuplicateConnectFracture(TPZGeoMesh *gmesh, TPZCompMesh *cmesh){
+    int nels = gmesh->NElements();
+    for (int64_t el = 0; el < cmesh->NElements(); el++){
+        TPZCompEl *cel = cmesh->Element(el);
+        TPZGeoEl *gel = cel->Reference();
+        int meshDim = gmesh->Dimension();
+        int elDim=gel->Dimension(); 
+        int matel=gel->MaterialId();
 
+        if (gel->MaterialId() < EVugId) continue; //TODO Melhorar 
+
+        //for(auto fracId: fracIds) 
+
+        int iside = gel->NSides() - 1;
+
+        TPZGeoElSide gelside(gel, iside);
+        TPZGeoElSide neigh=gelside.Neighbour();
+        TPZCompElSide celside=gelside.Reference(); // 
+        TPZCompElSide neighside=neigh.Reference(); // 
+        celside.SplitConnect(neighside);
+        cmesh->ExpandSolution();
+    }
+}
 #endif

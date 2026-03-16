@@ -45,7 +45,8 @@ enum MatID{
     EbcInletId = 2,
     EbcOutletId = 3,
     EbcNoFlux = 4,
-    ELagrange = 5
+    ELagrange = 5,
+    EfractureId=300
 };
 
 //TODO
@@ -69,9 +70,9 @@ void MeshWithSegmentVugs(TPZGeoMesh *gmesh, std::set<int>  &vugBcIds, std::set<i
 
 void PrintCompMesh(TPZCompMesh *cmesh);
 
-void CreateInterfaceGeoEls(TPZGeoMesh *gmesh);
+void CreateInterfaceGeoEls(TPZGeoMesh *gmesh,std::set<int> &vugIds);
 
-void InsertInterfaceEls(TPZMultiphysicsCompMesh *cmesh, TPZGeoMesh *gmesh);
+void InsertInterfaceEls(TPZMultiphysicsCompMesh *cmesh, TPZGeoMesh *gmesh, std::set<int> &vugIds,std::set<int> &vugBcIds);
 
 TPZGeoMesh* generateGMeshWithPhysTagVec(std::string& filename, TPZManVector<std::map<std::string,int>,4>& dim_name_and_physical_tagFine);
 
@@ -81,3 +82,4 @@ void PrintCompMesh(TPZCompMesh *cmesh);
 void insertAtomicMaterialsf(TPZCompMesh *cmesh, std::set<int> matIdsVol, std::set<int> matIdsBcs);
 void insertAtomicMaterialsp(TPZCompMesh *cmesh, std::set<int> matIdsVol, std::set<int> matIdsBcs);
 void SideOrientation(TPZCompMesh *cmesh);
+void DuplicateConnectFracture(TPZGeoMesh *gmesh, TPZCompMesh *cmesh);

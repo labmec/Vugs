@@ -27,7 +27,7 @@ void Hdiv_MixedCT(){
 
     //TPZVTKGeoMesh::PrintGMeshVTK(gmesh, file3);
 
-    MeshWithSegmentVugs(gmesh);
+    MeshWithSegmentFrac(gmesh);
 
     TPZVTKGeoMesh::PrintGMeshVTK(gmesh, file3);
     std::set<int> volId, bcId;
@@ -49,9 +49,9 @@ void Hdiv_MixedCT(){
     TPZMixedDarcyFlow *matDarcy = new TPZMixedDarcyFlow(EMatId,2);
     // TPZMixedDarcyFlow *matDarcyVugs= new TPZMixedDarcyFlow(EVugId,2); 
 
-   for(auto vugId: vugIds) { //TODO Vug elements
+   for(auto fracId: fracIds) { //TODO Frac elements
         //auto *matDarcyVugs= new TPZNullMaterialCS<REAL> (vugId,2,1);
-        auto *matDarcyVugs= new TPZMixedDarcyFlow (vugId,2);
+        auto *matDarcyVugs= new TPZMixedDarcyFlow (fracId,1);
         //auto *matDarcyVugs = new TPZL2ProjectionCS<REAL> (vugId,2,1);
         //matDarcyVugs->SetScaleFactor(0);
         cmesh_mult->InsertMaterialObject(matDarcyVugs);
@@ -81,9 +81,9 @@ void Hdiv_MixedCT(){
     cmesh_mult->InsertMaterialObject(face1);
 
 
-    //TODO Create comp elements of Vug Boundary
+    //TODO Create comp elements of Frac Boundary
     val2[0] = 0;
-    for(auto bcId: vugBcIds) {
+    for(auto bcId: fracBcIds) {
         TPZBndCond *faceVug = matDarcy->CreateBC(matDarcy,bcId,bc_typeD,val1,val2);
         cmesh_mult->InsertMaterialObject(faceVug);
     }

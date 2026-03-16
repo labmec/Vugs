@@ -71,6 +71,8 @@ void SetUniqueVugConnect(TPZGeoMesh *gmesh, TPZCompMesh *cmesh);
 
 void MeshWithSegmentVugs(TPZGeoMesh *gmesh);
 
+void MeshWithSegmentFrac(TPZGeoMesh *gmesh);
+
 void PrintCompMesh(TPZCompMesh *cmesh);
 
 //void CreateInterfaceGeoEls(TPZGeoMesh *gmesh,std::set<int> &vugIds);

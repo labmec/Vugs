@@ -112,8 +112,7 @@ void MeshWithSegmentVugs(TPZGeoMesh *gmesh){
         TPZGeoEl *gel = gmesh->Element(el);
         if(!gel) continue;
 
-        //if(gel->MaterialId() != matid_vug) continue;
-        if(gel->MaterialId() != matid_frac) continue;
+        if(gel->MaterialId() != matid_vug) continue; 
 
         if(verificador[el] != -1) continue;
 
@@ -128,10 +127,74 @@ void MeshWithSegmentVugs(TPZGeoMesh *gmesh){
 
             TPZGeoEl *gelcheck = gmesh->Element(elcheck); 
             verificador[elcheck] = mat+500; 
-            gelcheck->SetMaterialId(mat+500);  
+            gelcheck->SetMaterialId(mat+500); 
 
-            // vugBcIds.insert(mat); //TODO MELHORAR ISSO
-            // vugIds.insert(mat+500); 
+            vugBcIds.insert(mat); 
+            vugIds.insert(mat+500); 
+
+            int nsides   = gelcheck->NSides();
+            int ncorners = gelcheck->NCornerNodes();
+            int firstside = nsides - ncorners - 1;
+
+            for(int iside = firstside; iside < nsides; iside++){ 
+                
+                TPZGeoElSide gelside(gelcheck, iside);
+                TPZStack<TPZGeoElSide> allneigh;
+
+                gelside.AllNeighbours(allneigh); 
+                for(auto neigh: allneigh){
+                    TPZGeoEl* gelNeigh = neigh.Element();
+                    if(gelNeigh->MaterialId() == matDarcytag && gelside.Dimension() == gmesh->Dimension()-1){ // if the neighbor is darcy
+                       gelside.Element()->CreateBCGeoEl(iside, mat);
+                    }
+                    if(gelNeigh->MaterialId() == matid_vug){ // if the neighbor is a frac
+                        gelNeigh->SetMaterialId(mat+500);
+                        //verificador[gelNeigh->Index()] = mat+500; 
+                        tocheck.Push(gelNeigh->Index());
+                    }
+                }  
+            }
+        }
+      // incrementamos o valor de mat, para o seguinte vug.
+        mat++;
+        ncreated++;
+    }
+}
+
+void MeshWithSegmentFrac(TPZGeoMesh *gmesh){
+    int ncreated = 0;
+    int nels = gmesh->NElements();
+    int matid_vug=6;
+    int matid_frac=5;
+    int matDarcytag=1;
+    int meshdim=gmesh->Dimension();
+    int matid_Vugbound=100;
+
+    int mat = 100;
+    
+    TPZVec<int64_t> verificador(nels,-1);
+  
+    for(int el = 0; el < nels; el++){
+        TPZGeoEl *gel = gmesh->Element(el);
+        if(!gel) continue;
+
+        if(gel->MaterialId() != matid_frac) continue; 
+
+        if(verificador[el] != -1) continue;
+
+        TPZStack<int64_t> tocheck;
+        tocheck.Push(el); 
+
+        while(tocheck.size()){
+
+            int64_t elcheck = tocheck.Pop(); 
+
+            if(verificador[elcheck] != -1) continue; 
+
+            TPZGeoEl *gelcheck = gmesh->Element(elcheck); 
+            verificador[elcheck] = mat+500; 
+            gelcheck->SetMaterialId(mat+500); 
+
             fracBcIds.insert(mat); 
             fracIds.insert(mat+500); 
 
@@ -139,18 +202,21 @@ void MeshWithSegmentVugs(TPZGeoMesh *gmesh){
             int ncorners = gelcheck->NCornerNodes();
             int firstside = nsides - ncorners - 1;
 
-            for(int iside = firstside; iside < nsides; iside++){
+            for(int iside = firstside; iside < nsides; iside++){ 
                 
                 
                 TPZGeoElSide gelside(gelcheck, iside);
                 TPZStack<TPZGeoElSide> allneigh;
-                gelside.AllNeighbours(allneigh);
 
+                gelside.AllNeighbours(allneigh); 
                 for(auto neigh: allneigh){
                     TPZGeoEl* gelNeigh = neigh.Element();
-                    if(gelNeigh->MaterialId() == matid_frac){
+                    if(gelNeigh->MaterialId() == matDarcytag && gelside.Dimension() == gmesh->Dimension()-1){ // if the neighbor is darcy
+                       gelside.Element()->CreateBCGeoEl(iside, mat);
+                    }
+                    if(gelNeigh->MaterialId() == matid_frac){ // if the neighbor is a frac
                         gelNeigh->SetMaterialId(mat+500);
-                        verificador[gelNeigh->Index()] = mat+500; 
+                        //verificador[gelNeigh->Index()] = mat+500; 
                         tocheck.Push(gelNeigh->Index());
                     }
                 }  

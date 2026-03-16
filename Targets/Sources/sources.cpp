@@ -514,7 +514,12 @@ void CreateInterfaceGeoEls(TPZGeoMesh *gmesh){
         TPZGeoElSide neighSide = gelSide.HasNeighbour(EVugId);
 
         for (auto id: vugIds){
-            neighSide = gelSide.HasNeighbour(id); //TODO VERIFY
+            neighSide = gelSide.HasNeighbour(id); 
+            if(neighSide) break;
+        }
+
+        for (auto id: fracIds){
+            neighSide = gelSide.HasNeighbour(id); 
             if(neighSide) break;
         }
 
@@ -554,6 +559,16 @@ void InsertInterfaceEls(TPZMultiphysicsCompMesh *cmesh, TPZGeoMesh *gmesh){
         }
 
         for (auto id: vugBcIds){
+            neighHdiv = gelSide.HasNeighbour(id).Reference();
+            if(neighHdiv) break;
+        }
+
+        for (auto id: fracIds){
+            neighVug = gelSide.HasNeighbour(id).Reference();
+            if(neighVug) break;
+        }
+
+        for (auto id: fracBcIds){
             neighHdiv = gelSide.HasNeighbour(id).Reference();
             if(neighHdiv) break;
         }
@@ -650,135 +665,31 @@ void insertAtomicMaterialsp(TPZCompMesh *cmesh, std::set<int> matIdsVol, std::se
         std::cout<<"mat id "<<iD<<std::endl;
         TPZNullMaterial<STATE> * face2 = new TPZNullMaterial(iD, dim-1);
         //cmesh->InsertMaterialObject(face2);
-        //}
-//        if(iD==300){
-//        std::cout<<"mat id FRACT"<<iD<<std::endl;
-//        TPZNullMaterial<STATE> * face2 = new TPZNullMaterial(iD, dim-1);
-//        cmesh->InsertMaterialObject(face2);
-//        }
+
     }
 }
+
 void DuplicateConnectFracture(TPZGeoMesh *gmesh, TPZCompMesh *cmesh){
     int nels = gmesh->NElements();
     for (int64_t el = 0; el < cmesh->NElements(); el++){
         TPZCompEl *cel = cmesh->Element(el);
         TPZGeoEl *gel = cel->Reference();
         int meshDim = gmesh->Dimension();
-        int elDim=gel->Dimension();
+        int elDim=gel->Dimension(); 
         int matel=gel->MaterialId();
-        //std::cout<<"Mat id Found"<<matel<<std::endl;
-        if (elDim!=1) continue;
-        if (gel->MaterialId() != 300) continue;
-        std::cout<<"1D and mat iD 300"<<std::endl;
-        std::cout<<"elindex "<<gel->Index()<<std::endl;
 
-        int nsides= gel->NSides();
-        //std::cout<<"nsides: "<<nsides<<std::endl;
+        if (gel->MaterialId() < EVugId) continue; //TODO Melhorar 
 
-        int ncorners= gel->NCornerNodes();
-        //std::cout<<"ncorners: "<<ncorners<<std::endl;
+        //for(auto fracId: fracIds) 
 
-        int firstside= nsides-ncorners-1;
-        //std::cout<<"firstside: "<<firstside<<std::endl;
-        int iside=2;
-        //std::cout<<"iside: "<<iside<<std::endl;
+        int iside = gel->NSides() - 1;
+
         TPZGeoElSide gelside(gel, iside);
-        int sidedim = gelside.Element()->Dimension();
-        //std::cout<<"side Dim: "<<sidedim<<std::endl;
-        //gelside.AllNeighbours(allneigh);
         TPZGeoElSide neigh=gelside.Neighbour();
-        TPZCompElSide celside=gelside.Reference();
-        TPZCompElSide neighside=neigh.Reference();
+        TPZCompElSide celside=gelside.Reference(); // 
+        TPZCompElSide neighside=neigh.Reference(); // 
         celside.SplitConnect(neighside);
         cmesh->ExpandSolution();
-
-        //std::cout<<"gelneigh " <<gelneigh<<std::endl;
-        //int nneighs = allneigh.size();
-        //std::cout<<nneighs<<std::endl;
-        //if (gel && neighgel->Dimension() == 1 && neighgel->MaterialId() == 300 && neighgel->Index() != gel->Index())
-        //{
-        //    std::cout << "Vecino compartiendo side " << iside << ": elindex " << neighgel->Index() << std::endl;
-            
-        //std::cout<<allneigh[0]<<std::endl;
-//        for (int ineigh=0; ineigh<nneighs; ineigh++) {
-//                    //TPZGeoEl *gelneigh = allneigh[ineigh].Element();
-//                std::cout<<allneigh[ineigh]<<std::endl;
-//                gelsiden
-//
-//                   }
-        
-        
-        
-        
-        //}
     }
 }
-
-//void DuplicateConnectindexFlux(TPZGeoMesh *gmesh, TPZCompMesh *cmesh){
-//    int nels = gmesh->NElements();
-//    //TPZVec<int64_t> vugIndex(nVugs, -1);
-//    TPZVec<int64_t> gelIndex(nels, -1);
-//    std::map<int, int> matId_connect;
-//    for (int64_t el = 0; el < cmesh->NElements(); el++){
-//        TPZCompEl *cel = cmesh->Element(el);
-//        TPZGeoEl *gel = cel->Reference();
-//        int meshDim = gmesh->Dimension();
-//        //if (gel->Dimension() != meshDim-1) continue; // only boundary elements (Dim-1 elems)
-//        if (gel->MaterialId() < EfractureId and gel->MaterialId() >EVugId) continue;
-//        int connIndex = 0;
-//        auto it = matId_connect.find(gel->MaterialId()); // check if the material ID of the fracture already has an associated connect index
-//        if(it != matId_connect.end()){ // if it has, use the same connect index for all vug elements
-//            connIndex = matId_connect.at(gel->MaterialId());
-//        }
-//        else{ // if it doesn't, create a new connect index and associate it with the material ID of the vug
-//            connIndex = cel->ConnectIndex(0);
-//            matId_connect.insert({gel->MaterialId(), connIndex});
-//        }
-//        int nsides = gel->NSides();
-//        int nVertex = gel->NCornerNodes();
-//        auto fConnectVec=cmesh->ConnectVec();
-//        //TPZConnect c = fConnectVec[connIndex];
-//
-//        for(int side = 0; side < nVertex; side++){ // sides associated with vertices
-//            //cel->SetConnectIndex(side, connIndex);
-//            TPZConnect c =cel->Connect(connIndex);
-//            TPZGeoElSide gelside(gel,2);
-//            TPZCompElSide celside=gelside.Reference();
-//            TPZCompElSide neighside=neigh.Reference();
-//            celside.SplitConnect(neighside);
-//            int nshape=c.NShape();
-//            int nstate=c.NState();
-//            int ordernewConn=2;
-//            cmesh->AllocateNewConnect(nshape, nstate,  2);
-//        }
-//    }
-//
-//}
-void SideOrientation(TPZCompMesh *cmesh){ //CheckSideOrientation(TPZCompMesh *cmesh, TPZInterpolationSpace *intEl);
-
-    for(int el = 0; el < cmesh->NElements(); el++){
-        TPZCompEl *cel = cmesh->Element(el);
-        TPZGeoEl *gel = cel->Reference();
-        
-        //if(gel->MaterialId() < EVugBcId || gel->MaterialId() >= EVugId) continue;
-        if(gel->MaterialId() != EMatId) continue;
-        
-        int nSides = gel->NSides();
-        int nNodeSides = gel->NCornerNodes();
-
-        for(int side = nNodeSides; side < nSides-1; side++){
-            TPZGeoElSide gelSide(gel, side);
-            TPZGeoElSide neigh = gelSide.HasNeighbour(vugBcIds);
-            if(neigh){
-                TPZInterpolatedElement *intel = dynamic_cast<TPZInterpolatedElement *>(cel);
-                int orientation = intel->GetSideOrient(side);
-                //std::cout << orientation << "\n";
-                //int orientation = gel->NormalOrientation(side);
-                intel->SetSideOrient(side, 1.);
-                //std::cout << intel->GetSideOrient(side) << "\n";
-            }
-        }
-    }
-}
-
 #endif

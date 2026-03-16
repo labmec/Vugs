@@ -51,10 +51,10 @@ void Hdiv_MixedCT(){
 
    for(auto fracId: fracIds) { //TODO Frac elements
         //auto *matDarcyVugs= new TPZNullMaterialCS<REAL> (vugId,2,1);
-        auto *matDarcyVugs= new TPZMixedDarcyFlow (fracId,1);
+        auto *matDarcyFrac= new TPZMixedDarcyFlow (fracId,1);
         //auto *matDarcyVugs = new TPZL2ProjectionCS<REAL> (vugId,2,1);
         //matDarcyVugs->SetScaleFactor(0);
-        cmesh_mult->InsertMaterialObject(matDarcyVugs);
+        cmesh_mult->InsertMaterialObject(matDarcyFrac);
    }
 
     cmesh_mult->InsertMaterialObject(matDarcy);
@@ -84,8 +84,8 @@ void Hdiv_MixedCT(){
     //TODO Create comp elements of Frac Boundary
     val2[0] = 0;
     for(auto bcId: fracBcIds) {
-        TPZBndCond *faceVug = matDarcy->CreateBC(matDarcy,bcId,bc_typeD,val1,val2);
-        cmesh_mult->InsertMaterialObject(faceVug);
+        TPZBndCond *faceFrac = matDarcy->CreateBC(matDarcy,bcId,bc_typeD,val1,val2);
+        cmesh_mult->InsertMaterialObject(faceFrac);
     }
 
     cmesh_mult->ExpandSolution();
@@ -93,8 +93,8 @@ void Hdiv_MixedCT(){
     cmesh_mult->BuildMultiphysicsSpace(meshvec);
     // cmesh_mult->CleanUpUnconnectedNodes();
 
-    CreateInterfaceGeoEls(gmesh); //TODO Vug elements
-    InsertInterfaceEls(cmesh_mult, gmesh); //TODO Vug elements
+    CreateInterfaceGeoEls(gmesh);
+    InsertInterfaceEls(cmesh_mult, gmesh); 
     SideOrientation(Flux_cmesh);
 
     TPZVTKGeoMesh::PrintGMeshVTK(gmesh, file3);

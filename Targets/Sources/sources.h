@@ -41,8 +41,8 @@
 
 enum MatID{
     EMatId = 1,
-    EVugId = 600,
-    EVugBcId = 100,
+    EVugId = 600, //TODO também esta sendo EFracId
+    EVugBcId = 100, //TODO também esta sendo EFracBcId
     EFracId = 5, //TODO Change
     EbcInletId = 2,
     EbcOutletId = 3,
@@ -93,4 +93,6 @@ void insertAtomicMaterialsf(TPZCompMesh *cmesh, std::set<int> matIdsVol, std::se
 
 void insertAtomicMaterialsp(TPZCompMesh *cmesh, std::set<int> matIdsVol, std::set<int> matIdsBcs);
 void SideOrientation(TPZCompMesh *cmesh);
+void DuplicateConnectFracture(TPZGeoMesh *gmesh, TPZCompMesh *cmesh);
+
 void DuplicateConnectFracture(TPZGeoMesh *gmesh, TPZCompMesh *cmesh);

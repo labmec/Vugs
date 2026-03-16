@@ -14,11 +14,9 @@ void Hdiv_MixedCT(){
     dim_name_and_physical_tagCoarse[1]["noflux"] = EbcNoFlux;
     dim_name_and_physical_tagCoarse[2]["Vugs"] = 6;
     
-    std::string filename="/home/marina/programming/Stokes-Darcy-Research/VUGS/Meshes/testskelSLICE77SP.msh";
-    //std::string filename="/Users/victorvillegassalabarria/Documents/Github/Vugs/FastMesh.msh";
+    //std::string filename="/home/marina/programming/Stokes-Darcy-Research/VUGS/Meshes/testskelSLICE77SP.msh";
     //std::string filename="/home/marina/programming/Stokes-Darcy-Research/VUGS/Meshes/FastMesh.msh";
-    //std::string filename="/home/marina/programming/Stokes-Darcy-Research/VUGS/Meshes/SingleFracture.msh";
-    //std::string filename="/home/marina/programming/Stokes-Darcy-Research/VUGS/FewVugsMesh.msh";
+    std::string filename="/home/marina/programming/Stokes-Darcy-Research/VUGS/Meshes/FewVugsMesh.msh";
     //std::string filename="/Users/victorvillegassalabarria/Downloads/MallaTriangles123.msh";
     
     std::ofstream file20("TestGeoMesh2D.vtk");
@@ -32,6 +30,7 @@ void Hdiv_MixedCT(){
 
 
     MeshWithSegmentVugs(gmesh);
+    TPZVTKGeoMesh::PrintGMeshVTK(gmesh, file20);
 
     std::set<int> volId, bcId;
     GetAtomicIds(gmesh, volId, bcId);

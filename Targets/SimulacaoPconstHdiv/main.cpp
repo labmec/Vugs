@@ -15,11 +15,10 @@ void Hdiv_MixedCT(){
     dim_name_and_physical_tagCoarse[1]["noflux"] = EbcNoFlux;
     dim_name_and_physical_tagCoarse[2]["Vugs"] = 6;
     
-    std::string filename="/Users/victorvillegassalabarria/python-test/testskelSLICE77SP.msh";
+    //std::string filename="/Users/victorvillegassalabarria/python-test/testskelSLICE77SP.msh";
     //std::string filename="/Users/victorvillegassalabarria/Documents/Github/Vugs/FastMesh.msh";
     //std::string filename="/home/marina/programming/Stokes-Darcy-Research/VUGS/FastMesh.msh";
-    //std::string filename="/Users/victorvillegassalabarria/Documents/Github/Vugs/FewVugsMesh.msh";
-    //std::string filename="/Users/victorvillegassalabarria/Downloads/MallaTriangles123.msh";
+    std::string filename="/Users/victorvillegassalabarria/Documents/Github/Vugs/FewVugsMesh.msh";
     
     std::ofstream file20("TestGeoMesh2D.vtk");
     // std::ofstream file21("Test_cmeshFlux.vtk");
@@ -201,7 +200,7 @@ void Hdiv_Fract(){
     dim_name_and_physical_tagCoarse[1]["inlet"] = EbcInletId;
     dim_name_and_physical_tagCoarse[1]["outlet"] = EbcOutletId;
     dim_name_and_physical_tagCoarse[1]["noflux"] = EbcNoFlux;
-    dim_name_and_physical_tagCoarse[1]["SmallFract"] = EfractureId;
+    dim_name_and_physical_tagCoarse[1]["SmallFract"] = 6;
 
     //std::string filename="/Users/victorvillegassalabarria/python-test/testskelSLICE77SP.msh";
     //std::string filename="/Users/victorvillegassalabarria/Documents/Github/Vugs/FastMesh.msh";
@@ -215,7 +214,10 @@ void Hdiv_Fract(){
     // std::ofstream file23("Test_cmeshPressure.txt");
     // std::ofstream file24("Test_cmeshFlux.txt");
     // std::ofstream file25("Test_cmeshMulti.txt");
-    std::string filename="/home/marina/programming/Stokes-Darcy-Research/VUGS/SingleFracture.msh";
+    //std::string filename="/Users/victorvillegassalabarria/Downloads/SingleFracture1.msh";
+    std::string filename="/Users/victorvillegassalabarria/Downloads/FewFractures.msh";
+
+    //std::string filename="/home/marina/programming/Stokes-Darcy-Research/VUGS/SingleFracture.msh";
     std::ofstream file20("TestGeoMesh2D.vtk");
     gmesh = generateGMeshWithPhysTagVec(filename, dim_name_and_physical_tagCoarse);
 

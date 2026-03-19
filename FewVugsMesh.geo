@@ -105,5 +105,6 @@ Plane Surface(1000) = {1000};
 Physical Surface("k11", 1) = {1000};
 Physical Curve("inlet", 2) = {50};
 Physical Curve("outlet", 3) = {48};
-Physical Curve("noflux", 4) = {49,51};
+Physical Curve("UpFace", 4) = {49};
+Physical Curve("DownFace", 5) = {51};
 Physical Surface("Vugs",6)={44,45,46,47};

@@ -1,11 +1,13 @@
 #include <iostream>
+#include <fstream>
 #include <filesystem>
+#include <json.hpp>
 #include <math.h>
+
+using json = nlohmann::json;
+
 #include "pzcmesh.h"
 #include "TPZElementMatrixT.h"
-
-//#include <opencv2/opencv.hpp>
-//#include <opencv2/imgproc/imgproc.hpp>
 #include "pzmanvector.h"
 #include "TPZGeoMeshTools.h"
 #include "TPZCompMeshTools.h"
@@ -41,17 +43,23 @@
 
 enum MatID{
     EMatId = 1,
-    EVugId = 600, //TODO também esta sendo EFracId
-    EVugBcId = 100, //TODO também esta sendo EFracBcId
-    EFracId = 5, //TODO Change
+    EVugId = 600, 
+    EVugBcId = 100, 
+    EFracId = 700, 
+    EFracBcId = 200,
     EbcInletId = 2,
     EbcOutletId = 3,
-    EbcNoFlux = 4,
+    EbcTop = 4,
+    EbcBottom = 5,
     ELagrange = 6
 };
 
-//TPZCompMesh* HdivMesh(TPZGeoMesh *);
-//TPZCompMesh* Pressuremesh(TPZGeoMesh *, int order);
+struct BcData {
+    std::string name = "none"; // name of the bc
+    int matId = 0;
+    int type = 0; // bc type 
+    TPZManVector<double, 3>  value = {0.0, 0.0, 0.0}; // bc value
+};
 
 extern std::set<int> vugBcIds;
 extern std::set<int> vugIds;
@@ -59,40 +67,116 @@ extern std::set<int> vugIds;
 extern std::set<int> fracBcIds;
 extern std::set<int> fracIds;
 
-TPZCompMesh *CreateFluxMesh(TPZGeoMesh *, std::set<int> &volId, std::set<int> &bcId, int &orderp);
+class ReadJson
+{
+public:
 
-TPZCompMesh *CreatePressureMesh(TPZGeoMesh *,std::set<int> &volId, std::set<int> &bcId,int order);
+    //Constructor
+    ReadJson(std::string fileName);
+    
+    //Methods
+    std::string MeshName();
+
+    std::string MeshFile();
+
+    std::map<std::string, int> DomainData();
+
+    std::map<std::string, int> VugData();
+
+    std::map<std::string, int> FracData();
+
+    int approxType();
+
+    int problemType();
+
+    int pressOrder();
+
+    int dim();
+
+    int resolution();
+
+    double perm();
+
+    double permVug();
+
+    double permFrac();
+
+    double visc();
+
+    std::vector<BcData> BCInput();
+
+
+private:
+
+    json fInputFile;
+    
+    std::string fMeshName;
+    
+    std::string fMeshDirectory;
+
+    std::map<std::string, int> fDomainData;
+
+    std::map<std::string, int> fVugData;
+
+    std::map<std::string, int> fFracData;
+    
+    int fApproxType;
+
+    int fProblemType;
+    
+    int fPresspOrder;
+
+    int fDim;
+    
+    int fResolution;
+    
+    double fPerm;
+
+    double fVugPerm;
+
+    double fFracPerm;
+
+    double fVisc;
+
+    std::vector<BcData> fBcDataVec;
+
+};
+
+TPZGeoMesh* generateGMeshWithPhysTagVec(ReadJson inputData, std::string filename, std::string meshName);
+
+TPZCompMesh *CreateFluxMesh(TPZGeoMesh *, std::set<int> &volId, std::set<int> &bcId, int &orderp, ReadJson inputData);
+
+TPZCompMesh *CreatePressureMesh(TPZGeoMesh *, std::set<int> &volId, std::set<int> &bcId,int order, ReadJson inputData);
+
+TPZMultiphysicsCompMesh *CreateMultiMesh(TPZGeoMesh* gmesh, TPZVec<TPZCompMesh *> meshvec, ReadJson inputData);
+
+TPZCompMesh *CreateMesh(TPZGeoMesh* gmesh, ReadJson inputData);
 
 void GetAtomicIds(TPZGeoMesh *geomesh, std::set<int> &volId, std::set<int> &bcId);
 
-void insertAtomicMaterials(TPZCompMesh *cmesh, std::set<int> matIdsVol, std::set<int> matIdsBcs,int typeMesh);
+void insertAtomicMaterials(TPZCompMesh *cmesh, std::set<int> matIdsEls, std::set<int> matIdsBcs, int typeMesh, ReadJson inputData);
 
 void SetUniqueVugConnect(TPZGeoMesh *gmesh, TPZCompMesh *cmesh);
 
-void MeshWithSegmentVugs(TPZGeoMesh *gmesh);
+void MeshWithSegment(ReadJson inputData, TPZGeoMesh *gmesh);
 
-void MeshWithSegmentFrac(TPZGeoMesh *gmesh);
+void MeshWithSegmentVugs(ReadJson inputData, TPZGeoMesh *gmesh);
 
-void PrintCompMesh(TPZCompMesh *cmesh);
+void MeshWithSegmentFrac(ReadJson inputData, TPZGeoMesh *gmesh);
 
-//void CreateInterfaceGeoEls(TPZGeoMesh *gmesh,std::set<int> &vugIds);
+void SideOrientation(TPZCompMesh *cmesh);
+
+void DuplicateConnectFracture(TPZGeoMesh *gmesh, TPZCompMesh *cmesh);
+
 void CreateInterfaceGeoEls(TPZGeoMesh *gmesh);
 
 //void InsertInterfaceEls(TPZMultiphysicsCompMesh *cmesh, TPZGeoMesh *gmesh, std::set<int> &vugIds,std::set<int> &vugBcIds);
 void InsertInterfaceEls(TPZMultiphysicsCompMesh *cmesh, TPZGeoMesh *gmesh);
 
-TPZGeoMesh* generateGMeshWithPhysTagVec(std::string& filename, TPZManVector<std::map<std::string,int>,4>& dim_name_and_physical_tagFine);
+void Solve(TPZLinearAnalysis* an, TPZCompMesh* cmesh, ReadJson inputData);
 
-void findElDim(TPZStack<TPZGeoElSide> &allneigh, int dim, TPZStack<TPZGeoElSide> &allneighdim);
+void PostProcess(ReadJson inputData);
 
 void PrintCompMesh(TPZCompMesh *cmesh);
 
-void SideOrientation(TPZCompMesh *cmesh);
-
-void insertAtomicMaterialsf(TPZCompMesh *cmesh, std::set<int> matIdsVol, std::set<int> matIdsBcs);
-
-void insertAtomicMaterialsp(TPZCompMesh *cmesh, std::set<int> matIdsVol, std::set<int> matIdsBcs);
-void SideOrientation(TPZCompMesh *cmesh);
-void DuplicateConnectFracture(TPZGeoMesh *gmesh, TPZCompMesh *cmesh);
-
-void DuplicateConnectFracture(TPZGeoMesh *gmesh, TPZCompMesh *cmesh);
+void PrintGeoMesh(TPZGeoMesh *gmesh);

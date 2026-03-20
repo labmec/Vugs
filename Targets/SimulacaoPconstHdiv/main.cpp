@@ -15,9 +15,9 @@ void Hdiv_MixedCT(){
     dim_name_and_physical_tagCoarse[1]["noflux"] = EbcNoFlux;
 
     
-    //std::string filename="/home/marina/programming/Stokes-Darcy-Research/VUGS/Meshes/testskelSLICE77SP.msh";
+    std::string filename="/home/marina/programming/Stokes-Darcy-Research/VUGS/Meshes/testskelSLICE77SP.msh";
     //std::string filename="/home/marina/programming/Stokes-Darcy-Research/VUGS/Meshes/FastMesh.msh";
-    std::string filename="/home/marina/programming/Stokes-Darcy-Research/VUGS/Meshes/FewVugsMesh.msh";
+    //std::string filename="/home/marina/programming/Stokes-Darcy-Research/VUGS/Meshes/FewVugsMesh.msh";
     //std::string filename="/Users/victorvillegassalabarria/Downloads/MallaTriangles123.msh";
     
     std::ofstream file20("TestGeoMesh2D.vtk");
@@ -31,12 +31,18 @@ void Hdiv_MixedCT(){
 
 
     MeshWithSegmentVugs(gmesh);
-    TPZVTKGeoMesh::PrintGMeshVTK(gmesh, file20);
+    PrintGeoMesh(gmesh);
 
     std::set<int> volId, bcId;
     GetAtomicIds(gmesh, volId, bcId);
-    TPZCompMesh *Flux_cmesh = CreateFluxMesh(gmesh,volId,bcId);
-    TPZCompMesh *Pressure_cmesh = CreatePressureMesh(gmesh,volId,bcId,0);
+    int orderp=1;
+
+    TPZCompMesh *Flux_cmesh=CreateFluxMesh(gmesh,volId,bcId,orderp);
+    
+    TPZCompMesh *Pressure_cmesh=CreatePressureMesh(gmesh,volId,bcId,orderp);
+
+    PrintCompMesh(Flux_cmesh);
+    PrintCompMesh(Pressure_cmesh);
     
     TPZMultiphysicsCompMesh *cmesh_mult= new TPZMultiphysicsCompMesh(gmesh);
     TPZVec<TPZCompMesh *> meshvec(2);
@@ -142,9 +148,9 @@ void Hdiv_MixedCT(){
     anMixed.Run();
 
         {
-          const std::string plotfile = "Darcy_mixed";
+          const std::string plotfile = "Darcy_Mixed_Vug";
           constexpr int vtkRes{0};
-          TPZManVector<std::string, 2> fields = {"Flux", "Pressure"};
+          TPZManVector<std::string, 2> fields = {"Flux", "Pressure", "GradFluxX", "GradFluxY"};
           auto vtk = TPZVTKGenerator(cmesh_mult, fields, plotfile, vtkRes);
           vtk.Do();
         }

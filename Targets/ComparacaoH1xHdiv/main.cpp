@@ -66,8 +66,8 @@ int H1Vugs(){
 
 
       
-    //std::string filename="/home/marina/programming/Stokes-Darcy-Research/VUGS/testskelSLICE77SP.msh";
-    std::string filename="/home/marina/programming/Stokes-Darcy-Research/VUGS/FewVugsMesh.msh";
+    std::string filename="/home/marina/programming/Stokes-Darcy-Research/VUGS/Meshes/testskelSLICE77SP.msh";
+    //std::string filename="/home/marina/programming/Stokes-Darcy-Research/VUGS/Meshes/FewVugsMesh.msh";
     //std::string filename="/home/marina/programming/Stokes-Darcy-Research/VUGS/FastMesh.msh";
     //std::string filename="/home/itopo/Stokes-Darcy_Research/Vugs/testskelSLICE77SP.msh";
 
@@ -175,8 +175,8 @@ int Hdiv_MixedCT(){
     dim_name_and_physical_tagCoarse[2]["Vugs"] = 6;
 
     
-    //std::string filename="/home/marina/programming/Stokes-Darcy-Research/VUGS/testskelSLICE77SP.msh";
-    std::string filename="/home/marina/programming/Stokes-Darcy-Research/VUGS/FewVugsMesh.msh";
+    std::string filename="/home/marina/programming/Stokes-Darcy-Research/VUGS/Meshes/testskelSLICE77SP.msh";
+    //std::string filename="/home/marina/programming/Stokes-Darcy-Research/VUGS/FewVugsMesh.msh";
     //std::string filename="/home/marina/programming/Stokes-Darcy-Research/VUGS/FastMesh.msh";
     //std::string filename="/home/itopo/Stokes-Darcy_Research/Vugs/testskelSLICE77SP.msh";
 
@@ -272,7 +272,7 @@ int Hdiv_MixedCT(){
     {
       const std::string plotfile = "darcy_mixed";
       constexpr int vtkRes{0};
-      TPZManVector<std::string, 2> fields = {"Flux", "Pressure"};
+      TPZManVector<std::string, 2> fields = {"Flux", "Pressure", "GradFluxX", "GradFluxY"};
       auto vtk = TPZVTKGenerator(cmesh, fields, plotfile, vtkRes);
       vtk.Do();
     }
@@ -351,7 +351,7 @@ TPZCompMesh *Pressuremesh(TPZGeoMesh *gmesh,int order){
     //devuelve una malla L2
 }
 int main (){
-    H1Vugs();
+    //H1Vugs();
     Hdiv_MixedCT();
     return 0;
 }

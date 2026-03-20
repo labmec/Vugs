@@ -348,9 +348,9 @@ void H1Vugs(){
     dim_name_and_physical_tagCoarse[1]["noflux"] = EbcNoFlux;
 
 
-    //std::string filename="/home/marina/programming/Stokes-Darcy-Research/VUGS/testskelSLICE77SP.msh";
-    std::string filename="/home/marina/programming/Stokes-Darcy-Research/VUGS/FewVugsMesh.msh";
-    //std::string filename="/home/marina/programming/Stokes-Darcy-Research/VUGS/FastMesh.msh";
+    std::string filename="/home/marina/programming/Stokes-Darcy-Research/VUGS/Meshes/testskelSLICE77SP.msh";
+    //std::string filename="/home/marina/programming/Stokes-Darcy-Research/VUGS/FewVugsMesh.msh";
+    //std::string filename="/home/marina/programming/Stokes-Darcy-Research/VUGS/Meshes/FastMesh.msh";
     //std::string filename="/home/itopo/Stokes-Darcy_Research/Vugs/testskelSLICE77SP.msh";
 
     gmesh = generateGMeshWithPhysTagVec(filename, dim_name_and_physical_tagCoarse);
@@ -396,11 +396,11 @@ void H1Vugs(){
     TPZBndCond * face1 = matDarcy->CreateBC(matDarcy,EbcOutletId,bc_typeD,val1,val2);
     cmesh->InsertMaterialObject(face1);
 
-    val2[0]=1000;
+    val2[0]=0;
     //TODO Create comp elements of Vug Boundary
     for(int iel = 0; iel < nVugs; iel++) {
         int matid = EVugBcId + iel;
-        TPZBndCond *faceVug = matDarcySmallVug->CreateBC(matDarcySmallVug,matid,bc_typeD,val1,val2);
+        TPZBndCond *faceVug = matDarcySmallVug->CreateBC(matDarcySmallVug,matid,bc_typeN,val1,val2);
         cmesh->InsertMaterialObject(faceVug);
     }
 
@@ -452,7 +452,7 @@ void H1Vugs(){
       
     //Configuración del posprocesamiento
     int ref = 0; 
-    std::string file_reservoir("Darcy_H1.vtk");
+    std::string file_reservoir("Darcy_H1_Vug.vtk");
     std::string file_shape("Shape.vtk");
     //TPZVec<int64_t> equationindices (1,1); // indices of the equations to be postprocessed
     //Analisys->ShowShape(file_shape, equationindices); //TODO Verify if this is the correct way to show shape functions

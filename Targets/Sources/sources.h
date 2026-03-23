@@ -158,11 +158,9 @@ void insertAtomicMaterials(TPZCompMesh *cmesh, std::set<int> matIdsEls, std::set
 
 void SetUniqueVugConnect(TPZGeoMesh *gmesh, TPZCompMesh *cmesh);
 
+void MeshWithSegmentPhil(ReadJson inputData, TPZGeoMesh *gmesh);
+
 void MeshWithSegment(ReadJson inputData, TPZGeoMesh *gmesh);
-
-void MeshWithSegmentVugs(ReadJson inputData, TPZGeoMesh *gmesh);
-
-void MeshWithSegmentFrac(ReadJson inputData, TPZGeoMesh *gmesh);
 
 void SideOrientation(TPZCompMesh *cmesh);
 

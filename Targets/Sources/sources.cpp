@@ -48,7 +48,7 @@ TPZGeoMesh* generateGMeshWithPhysTagVec(ReadJson inputData, std::string filename
     return gmeshFine;
 }
 
-void MeshWithSegment(TPZGeoMesh *gmesh){
+void MeshWithSegmentPhil(ReadJson inputData, TPZGeoMesh *gmesh){
     int ncreated = 0;
     int nels = gmesh->NElements();
     int matid_vug=6;
@@ -145,77 +145,15 @@ void MeshWithSegment(TPZGeoMesh *gmesh){
 
 }
 
-void MeshWithSegmentVugs(TPZGeoMesh *gmesh){
-    int ncreated = 0;
-    int nels = gmesh->NElements();
-    int matid_vug=6;
-    int meshdim=gmesh->Dimension();
-
-    int mat = EVugBcId;
-    
-    TPZVec<int64_t> verificador(nels,-1);
-  
-    for(int el = 0; el < nels; el++){
-        TPZGeoEl *gel = gmesh->Element(el);
-        if(!gel) continue;
-
-        if(gel->MaterialId() != matid_vug) continue; 
-
-        if(verificador[el] != -1) continue;
-
-        TPZStack<int64_t> tocheck;
-        tocheck.Push(el); 
-
-        while(tocheck.size()){
-
-            int64_t elcheck = tocheck.Pop(); 
-
-            if(verificador[elcheck] != -1) continue; 
-
-            TPZGeoEl *gelcheck = gmesh->Element(elcheck); 
-            verificador[elcheck] = mat+500; 
-            gelcheck->SetMaterialId(mat+500); 
-
-            vugBcIds.insert(mat); 
-            vugIds.insert(mat+500); 
-
-            int nsides   = gelcheck->NSides();
-            int ncorners = gelcheck->NCornerNodes();
-            int firstside = nsides - ncorners - 1;
-
-            for(int iside = firstside; iside < nsides; iside++){ 
-                
-                TPZGeoElSide gelside(gelcheck, iside);
-                TPZStack<TPZGeoElSide> allneigh;
-
-                gelside.AllNeighbours(allneigh); 
-                for(auto neigh: allneigh){
-                    TPZGeoEl* gelNeigh = neigh.Element();
-                    if(gelNeigh->MaterialId() == EMatId && gelside.Dimension() == gmesh->Dimension()-1){ // if the neighbor is darcy
-                       gelside.Element()->CreateBCGeoEl(iside, mat);
-                    }
-                    if(gelNeigh->MaterialId() == matid_vug){ // if the neighbor is a frac
-                        gelNeigh->SetMaterialId(mat+500);
-                        //verificador[gelNeigh->Index()] = mat+500; 
-                        tocheck.Push(gelNeigh->Index());
-                    }
-                }  
-            }
-        }
-      // incrementamos o valor de mat, para o seguinte vug.
-        mat++;
-        ncreated++;
-    }
-}
 
 //TODO Arrumar para fazer Vugs e Frac
-void MeshWithSegmentFrac(ReadJson inputData, TPZGeoMesh *gmesh){
+void MeshWithSegment(ReadJson inputData, TPZGeoMesh *gmesh){
     int ncreated = 0;
     int nels = gmesh->NElements();
     int matid_vug = 0;
     int matid_frac = 0;
-    int mat = EFracBcId;
-    int matVug = EVugId;
+    int matFrac = EFracBcId;
+    int mat = EVugBcId;
 
     std::map<std::string, int> domainData = inputData.DomainData();
     std::map<std::string, int> vugData = inputData.VugData();
@@ -240,7 +178,7 @@ void MeshWithSegmentFrac(ReadJson inputData, TPZGeoMesh *gmesh){
         TPZGeoEl *gel = gmesh->Element(el);
         if(!gel) continue;
 
-        if(gel->MaterialId() != matid_frac) continue; 
+        if(gel->MaterialId() != matid_frac && gel->MaterialId() != matid_vug) continue; 
 
         if(verificador[el] != -1) continue;
 
@@ -257,8 +195,11 @@ void MeshWithSegmentFrac(ReadJson inputData, TPZGeoMesh *gmesh){
             verificador[elcheck] = mat+500; 
             gelcheck->SetMaterialId(mat+500); 
 
-            fracBcIds.insert(mat); 
-            fracIds.insert(mat+500); 
+            // fracBcIds.insert(mat); 
+            // fracIds.insert(mat+500); 
+
+            vugBcIds.insert(mat); 
+            vugIds.insert(mat+500); 
 
             int nsides   = gelcheck->NSides();
             int ncorners = gelcheck->NCornerNodes();
@@ -276,15 +217,13 @@ void MeshWithSegmentFrac(ReadJson inputData, TPZGeoMesh *gmesh){
                     if(gelNeigh->MaterialId() == EMatId && gelside.Dimension() == gmesh->Dimension()-1){ 
                        gelside.Element()->CreateBCGeoEl(iside, mat);
                     }
-                    if(gelNeigh->MaterialId() == matid_frac){ 
-                        gelNeigh->SetMaterialId(mat+500);
-                        //verificador[gelNeigh->Index()] = mat+500; 
+                    if(gelNeigh->MaterialId() == matid_vug){ 
+                        gelNeigh->SetMaterialId(mat+500); 
                         tocheck.Push(gelNeigh->Index());
                     }
                 }  
             }
         }
-      // incrementamos o valor de mat, para o seguinte vug.
         mat++;
         ncreated++;
     }
@@ -295,7 +234,7 @@ void MeshWithSegmentFrac(ReadJson inputData, TPZGeoMesh *gmesh){
 void SetUniqueVugConnect(TPZGeoMesh *gmesh, TPZCompMesh *cmesh){
     cmesh->Reference()->ResetReference();
     cmesh->LoadReferences();
-
+    int count = 0;
     int nels = gmesh->NElements();
     TPZVec<int64_t> gelIndex(nels, -1);
     std::map<int, int> matId_connect;
@@ -312,6 +251,7 @@ void SetUniqueVugConnect(TPZGeoMesh *gmesh, TPZCompMesh *cmesh){
             TPZGeoElSide gelside(gel, side); // node i of gel
             TPZCompElSide celside = gelside.Reference();
             if(origCon_newCon.find(celside.ConnectIndex()) != origCon_newCon.end()){
+                count++;
                 cel->SetConnectIndex(side, origCon_newCon.at(celside.ConnectIndex()));
             }
         }
@@ -340,6 +280,7 @@ void SetUniqueVugConnect(TPZGeoMesh *gmesh, TPZCompMesh *cmesh){
     }
     cmesh->ComputeNodElCon();
     cmesh->CleanUpUnconnectedNodes();
+    std::cout << "Map size " << origCon_newCon.size() << "\n";
 }
 
 
@@ -575,14 +516,18 @@ TPZCompMesh *CreateMesh(TPZGeoMesh* gmesh, ReadJson inputData){
     TPZDarcyFlow *matDarcyFrac = nullptr;
     for(auto Id: fracIds) {
         matDarcyFrac = new TPZDarcyFlow(Id, 1);
-        if(inputData.permFrac()) matDarcyFrac->SetConstantPermeability(inputData.permFrac());
+        if(inputData.problemType() == 0){
+            matDarcyFrac->SetConstantPermeability(inputData.permFrac());
+        }
         cmesh->InsertMaterialObject(matDarcyFrac);
     }
 
     TPZDarcyFlow *matDarcyVug = nullptr;
     for(auto Id: vugIds) {
         matDarcyVug = new TPZDarcyFlow(Id, inputData.dim());
-        if(inputData.permVug()) matDarcyVug->SetConstantPermeability(inputData.permVug());
+        if(inputData.problemType() == 0) {
+            matDarcyVug->SetConstantPermeability(inputData.permVug());
+        }
         cmesh->InsertMaterialObject(matDarcyVug);
     }
 
@@ -612,6 +557,8 @@ TPZCompMesh *CreateMesh(TPZGeoMesh* gmesh, ReadJson inputData){
 
     cmesh->AutoBuild();
 
+    PrintCompMesh(cmesh);
+
     if(inputData.problemType() == 1) SetUniqueVugConnect(gmesh, cmesh);
 
     cmesh->CleanUpUnconnectedNodes();
@@ -631,13 +578,13 @@ void CreateInterfaceGeoEls(TPZGeoMesh *gmesh){
 
         TPZGeoEl *gel = gmesh->Element(el);
 
-        if(!gel || gel->MaterialId() < EVugBcId || gel->MaterialId() >= EVugId) continue;
+        if(fracBcIds.find(gel->MaterialId()) == fracBcIds.end() && vugBcIds.find(gel->MaterialId()) == vugBcIds.end()) continue;
 
         int nSides = gel->NSides();
         TPZGeoElSide gelSide(gel, nSides - 1);
 
         TPZGeoElSide neighSide = gelSide.HasNeighbour(EVugId);
-        if(fracIds.find(gelSide.Element()->MaterialId()) != fracIds.end()){
+        if(vugBcIds.find(gelSide.Element()->MaterialId()) != vugBcIds.end()){
             for (auto id: vugIds){
                 neighSide = gelSide.HasNeighbour(id); 
                 if(neighSide) break;
@@ -890,6 +837,8 @@ ReadJson::ReadJson(std::string fileName){
     fResolution = fInputFile["Resolution"];
     
     fPerm = fInputFile["ProblemData"]["Permeability"];
+
+    if(fInputFile["ProblemData"].find("VugPermeability") == fInputFile["ProblemData"].end() && fProblemType == 0) DebugStop();
 
     if(fInputFile["ProblemData"].find("VugPermeability") != fInputFile["ProblemData"].end()) fVugPerm = fInputFile["ProblemData"]["VugPermeability"];
 

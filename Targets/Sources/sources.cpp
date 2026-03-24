@@ -18,29 +18,20 @@ TPZGeoMesh* generateGMeshWithPhysTagVec(ReadJson inputData, std::string filename
 
     TPZManVector<std::map<std::string,int>,4> dim_name_and_physical_tag(4);
 
-    std::map<std::string, int> domainData = inputData.DomainData();
-    std::map<std::string, int> vugData = inputData.VugData();
-    std::map<std::string, int> fracData = inputData.FracData();
+    std::vector<DomData> domainData = inputData.DomainData();
     std::vector<BcData> bcData = inputData.BCInput();
+    int Dim = inputData.dim();
 
     for (auto bc: bcData){
-        dim_name_and_physical_tag[1][bc.name] = bc.matId;
+        dim_name_and_physical_tag[Dim-1][bc.name] = bc.matId;
     }
 
     for (auto info: domainData){
-            dim_name_and_physical_tag[2][info.first] = info.second;
+        int elDim = Dim;
+        if (info.matId == 5) elDim = 1;
+        dim_name_and_physical_tag[elDim][info.name] = info.matId;
     }
-    if (!vugData.empty()) {
-        for (auto info: vugData){
-            dim_name_and_physical_tag[2][info.first] = info.second;
-        }
-    }
-    if (!fracData.empty()) {
-        for (auto info: fracData){
-            dim_name_and_physical_tag[1][info.first] = info.second;
-        }
-    }
-    
+
     // Reading mesh
     GeometryFine.SetDimNamePhysical(dim_name_and_physical_tag);
     gmeshFine = GeometryFine.GeometricGmshMesh(filename,nullptr,false);
@@ -48,12 +39,13 @@ TPZGeoMesh* generateGMeshWithPhysTagVec(ReadJson inputData, std::string filename
     return gmeshFine;
 }
 
+
 void MeshWithSegmentPhil(ReadJson inputData, TPZGeoMesh *gmesh){
     int ncreated = 0;
     int nels = gmesh->NElements();
-    int matid_vug=6;
+    int matid_vug = 6;
     int meshdim = gmesh->Dimension();
-    int EfractureId = 6; //CHANGE IT
+    int EfractureId = 5; //CHANGE IT
 
     int VugBcMatId = EFracBcId;
 
@@ -152,22 +144,14 @@ void MeshWithSegment(ReadJson inputData, TPZGeoMesh *gmesh){
     int nels = gmesh->NElements();
     int matid_vug = 0;
     int matid_frac = 0;
-    int matFrac = EFracBcId;
-    int mat = EVugBcId;
+    int mat = EFracBcId;
+    int matVug = EVugBcId;
 
-    std::map<std::string, int> domainData = inputData.DomainData();
-    std::map<std::string, int> vugData = inputData.VugData();
-    std::map<std::string, int> fracData = inputData.FracData();
+    std::vector<DomData> domainData = inputData.DomainData();
 
-    if (!vugData.empty()) {
-        for (auto info: vugData){
-            matid_vug = info.second;
-        }
-    }
-    if (!fracData.empty()) {
-        for (auto info: fracData){
-            matid_frac = info.second;
-        }
+    for (auto info: domainData){
+        if (info.matId == 6) matid_vug = info.matId;
+        else if (info.matId == 5) matid_frac = info.matId;
     }
 
     if (!matid_vug && !matid_frac) DebugStop();
@@ -185,6 +169,16 @@ void MeshWithSegment(ReadJson inputData, TPZGeoMesh *gmesh){
         TPZStack<int64_t> tocheck;
         tocheck.Push(el); 
 
+        if(gel->MaterialId() == matid_frac){
+            fracBcIds.insert(mat); 
+            fracIds.insert(mat+500); 
+        }
+        else if(gel->MaterialId() == matid_vug){
+            vugBcIds.insert(mat); 
+            vugIds.insert(mat+500); 
+        }
+        else DebugStop();
+    
         while(tocheck.size()){
 
             int64_t elcheck = tocheck.Pop(); 
@@ -195,11 +189,15 @@ void MeshWithSegment(ReadJson inputData, TPZGeoMesh *gmesh){
             verificador[elcheck] = mat+500; 
             gelcheck->SetMaterialId(mat+500); 
 
-            // fracBcIds.insert(mat); 
-            // fracIds.insert(mat+500); 
-
-            vugBcIds.insert(mat); 
-            vugIds.insert(mat+500); 
+            // if(gel->MaterialId() == matid_frac){
+            //     fracBcIds.insert(mat); 
+            //     fracIds.insert(mat+500); 
+            // }
+            // else if(gel->MaterialId() == matid_vug){
+            //     vugBcIds.insert(mat); 
+            //     vugIds.insert(mat+500); 
+            // }
+            // else DebugStop();
 
             int nsides   = gelcheck->NSides();
             int ncorners = gelcheck->NCornerNodes();
@@ -216,6 +214,10 @@ void MeshWithSegment(ReadJson inputData, TPZGeoMesh *gmesh){
                     if(gelNeigh->MaterialId() == EMatId && gelside.Dimension() == gmesh->Dimension()-1){ 
                        gelside.Element()->CreateBCGeoEl(iside, mat);
                     }
+                    if(gelNeigh->MaterialId() == matid_frac){ 
+                        gelNeigh->SetMaterialId(mat+500); 
+                        tocheck.Push(gelNeigh->Index());
+                    }
                     if(gelNeigh->MaterialId() == matid_vug){ 
                         gelNeigh->SetMaterialId(mat+500); 
                         tocheck.Push(gelNeigh->Index());
@@ -229,7 +231,6 @@ void MeshWithSegment(ReadJson inputData, TPZGeoMesh *gmesh){
 }
 
 
-//TODO Melhorar
 void SetUniqueVugConnect(TPZGeoMesh *gmesh, TPZCompMesh *cmesh){
     cmesh->Reference()->ResetReference();
     cmesh->LoadReferences();
@@ -279,13 +280,13 @@ void SetUniqueVugConnect(TPZGeoMesh *gmesh, TPZCompMesh *cmesh){
     }
     cmesh->ComputeNodElCon();
     cmesh->CleanUpUnconnectedNodes();
-    std::cout << "Map size " << origCon_newCon.size() << "\n";
 }
 
 
 void insertAtomicMaterials(TPZCompMesh *cmesh, std::set<int> matIdsEls, std::set<int> matIdsBcs, int typeMesh, ReadJson inputData){
 
     std::vector<BcData> bcData = inputData.BCInput();
+    int problemType = inputData.problemType();
     int bcType = 0;
     int bcId = 0;
     TPZManVector<double, 3> bcValue;
@@ -317,7 +318,7 @@ void insertAtomicMaterials(TPZCompMesh *cmesh, std::set<int> matIdsEls, std::set
                     TPZBndCond *faceVug = matDarcy->CreateBC(matDarcy, bcId, 0, val1, val2);
                     cmesh->InsertMaterialObject(faceVug);
                 }
-            }            
+            }           
         }
     }
     else if (typeMesh == 1){ //if pressure mesh
@@ -356,8 +357,9 @@ TPZCompMesh *CreateFluxMesh(TPZGeoMesh *gmesh, std::set<int> &elsId, std::set<in
     int typeMesh = 0; //Malha de fluxo
     TPZCompMesh *cmesh = new TPZCompMesh(gmesh);
     cmesh->SetName("FluxMesh");
-     
-    insertAtomicMaterials(cmesh, elsId, bcId, typeMesh, inputData);
+    int problemType = inputData.problemType();
+
+    insertAtomicMaterials(cmesh, elsId, bcId, typeMesh, inputData); 
         
     int pOrder=1;
     cmesh->SetDefaultOrder(pOrder);
@@ -384,7 +386,21 @@ TPZCompMesh *CreateFluxMesh(TPZGeoMesh *gmesh, std::set<int> &elsId, std::set<in
     DuplicateConnectFracture(gmesh, cmesh); 
     SideOrientation(cmesh);
 
-    // cmesh->ExpandSolution();
+    gmesh->ResetReference();
+
+    if(problemType == 0){ 
+        cmesh->SetDimModel(1);
+        cmesh->SetDefaultOrder(2);
+        for(auto Id: fracIds) {
+            TPZNullMaterial <STATE> *matFrac = new TPZNullMaterial(Id, 1);
+            cmesh->InsertMaterialObject(matFrac);
+        }
+        cmesh->ApproxSpace().SetAllCreateFunctionsHDiv(1);
+        cmesh->AutoBuild(fracIds);
+    } 
+
+    cmesh->LoadReferences();
+    cmesh->ExpandSolution();
     // cmesh->CleanUpUnconnectedNodes();
     // cmesh->InitializeBlock();
 
@@ -421,8 +437,7 @@ TPZCompMesh *CreatePressureMesh(TPZGeoMesh *gmesh, std::set<int> &elsId, std::se
         }
     }
 
-    PrintCompMesh(cmesh);
-    SetUniqueVugConnect(gmesh, cmesh);
+    if (inputData.problemType() == 1) SetUniqueVugConnect(gmesh, cmesh);
     
     cmesh->InitializeBlock();
  
@@ -439,6 +454,12 @@ TPZMultiphysicsCompMesh *CreateMultiMesh(TPZGeoMesh* gmesh, TPZVec<TPZCompMesh *
         DebugStop();
     }
 
+    std::vector<DomData> domainData = inputData.DomainData();
+    std::map<int,double> matId_perm;
+    for(auto info: domainData){
+        matId_perm[info.matId] = info.permeability;
+    }
+
     std::vector<BcData> bcData = inputData.BCInput();
     int bcType = 0;
     int bcId = 0;
@@ -447,10 +468,13 @@ TPZMultiphysicsCompMesh *CreateMultiMesh(TPZGeoMesh* gmesh, TPZVec<TPZCompMesh *
     // Add materials (weak formulation)
     TPZMixedDarcyFlow *matDarcy = new TPZMixedDarcyFlow(EMatId, inputData.dim());
     cmesh->InsertMaterialObject(matDarcy);
-    matDarcy->SetConstantPermeability(inputData.perm());
+    matDarcy->SetConstantPermeability(matId_perm[EMatId]);
     
     for(auto fracId: fracIds) { // Frac elements
         auto *matDarcyFrac = new TPZMixedDarcyFlow(fracId, 1);
+        if(inputData.problemType() == 0){
+            matDarcyFrac->SetConstantPermeability(matId_perm.at(5));
+        }
         cmesh->InsertMaterialObject(matDarcyFrac);
     }
 
@@ -502,6 +526,12 @@ TPZCompMesh *CreateMesh(TPZGeoMesh* gmesh, ReadJson inputData){
     TPZCompMesh *cmesh =  new TPZCompMesh(gmesh);
     cmesh->SetName("CompMesh");
 
+    std::vector<DomData> domainData = inputData.DomainData();
+    std::map<int,double> matId_perm;
+    for(auto info: domainData){
+        matId_perm[info.matId] = info.permeability;
+    }
+
     std::vector<BcData> bcData = inputData.BCInput();
     int bcType = 0;
     int bcId = 0;
@@ -509,14 +539,14 @@ TPZCompMesh *CreateMesh(TPZGeoMesh* gmesh, ReadJson inputData){
     
     // Add materials (weak formulation)
     TPZDarcyFlow *matDarcy = new TPZDarcyFlow(EMatId, inputData.dim());
-    matDarcy->SetConstantPermeability(inputData.perm());
+    matDarcy->SetConstantPermeability(matId_perm.at(EMatId));
     cmesh->InsertMaterialObject(matDarcy);
 
     TPZDarcyFlow *matDarcyFrac = nullptr;
     for(auto Id: fracIds) {
         matDarcyFrac = new TPZDarcyFlow(Id, 1);
         if(inputData.problemType() == 0){
-            matDarcyFrac->SetConstantPermeability(inputData.permFrac());
+            matDarcyFrac->SetConstantPermeability(matId_perm.at(5));
         }
         cmesh->InsertMaterialObject(matDarcyFrac);
     }
@@ -525,7 +555,7 @@ TPZCompMesh *CreateMesh(TPZGeoMesh* gmesh, ReadJson inputData){
     for(auto Id: vugIds) {
         matDarcyVug = new TPZDarcyFlow(Id, inputData.dim());
         if(inputData.problemType() == 0) {
-            matDarcyVug->SetConstantPermeability(inputData.permVug());
+            matDarcyVug->SetConstantPermeability(matId_perm.at(6));
         }
         cmesh->InsertMaterialObject(matDarcyVug);
     }
@@ -571,7 +601,8 @@ TPZCompMesh *CreateMesh(TPZGeoMesh* gmesh, ReadJson inputData){
 
 
 void CreateInterfaceGeoEls(TPZGeoMesh *gmesh){
- 
+    //Interface between Hdiv (boundary) element and Pressure (vug or frac) element
+
     int nEl = gmesh->NElements();
     for(int el = 0; el < nEl; el++){
 
@@ -606,6 +637,7 @@ void CreateInterfaceGeoEls(TPZGeoMesh *gmesh){
 
 
 void InsertInterfaceEls(TPZMultiphysicsCompMesh *cmesh, TPZGeoMesh *gmesh){
+    //Interface between Hdiv (boundary) element and Pressure (vug or frac) element
 
     TPZLagrangeMultiplierCS<STATE> *matInterface = new TPZLagrangeMultiplierCS<STATE>(ELagrange, gmesh->Dimension()-1, 1);
     //matInterface->SetMultiplier(-1);
@@ -668,6 +700,7 @@ void InsertInterfaceEls(TPZMultiphysicsCompMesh *cmesh, TPZGeoMesh *gmesh){
     }
 }
 
+
 void PrintCompMesh(TPZCompMesh *cmesh)
 {
     std::cout << "\nPrinting comp mesh in .txt and .vtk formats...\n";
@@ -678,6 +711,7 @@ void PrintCompMesh(TPZCompMesh *cmesh)
     TPZVTKGeoMesh::PrintCMeshVTK(cmesh, VTKCompMeshFile);
     cmesh->Print(TextCompMeshFile);
 }
+
 
 void PrintGeoMesh(TPZGeoMesh *gmesh)
 {
@@ -718,7 +752,7 @@ void SideOrientation(TPZCompMesh *cmesh){ //CheckSideOrientation(TPZCompMesh *cm
     }
 }  
 
-
+//TODO Still want to check
 void DuplicateConnectFracture(TPZGeoMesh *gmesh, TPZCompMesh *cmesh){
     int nels = gmesh->NElements();
     std::set<int> neighIndices; // set to store el indeces that has already been analyzed
@@ -730,7 +764,7 @@ void DuplicateConnectFracture(TPZGeoMesh *gmesh, TPZCompMesh *cmesh){
         int matId = gel->MaterialId();
 
 
-        if(elDim != meshDim - 1 || matId < EFracBcId) continue; // Searching for frac boundary id = 200
+        if(elDim != meshDim - 1 || matId < EFracBcId) continue; 
         if(neighIndices.find(gel->Index()) != neighIndices.end()) continue;
 
         int iside = gel->NSides() - 1;
@@ -816,14 +850,6 @@ ReadJson::ReadJson(std::string fileName){
     fMeshName = fInputFile["MeshName"];
     
     fMeshDirectory = fInputFile["MeshDirectory"];
-
-    if(fInputFile["DomainData"].find("NameDomain") == fInputFile["DomainData"].end()) DebugStop();
-
-    fDomainData[fInputFile["DomainData"]["NameDomain"]] = fInputFile["DomainData"]["matId"];
-
-    if(fInputFile["DomainData"].find("NameVug") != fInputFile["DomainData"].end()) fVugData[fInputFile["DomainData"]["NameVug"]] = fInputFile["DomainData"]["matIdVug"];
-
-    if(fInputFile["DomainData"].find("NameFrac") != fInputFile["DomainData"].end()) fFracData[fInputFile["DomainData"]["NameFrac"]] = fInputFile["DomainData"]["matIdFrac"];
     
     fApproxType = fInputFile["Simulation"]["ApproximationType"];
 
@@ -834,16 +860,20 @@ ReadJson::ReadJson(std::string fileName){
     fDim = fInputFile["Dimension"];
     
     fResolution = fInputFile["Resolution"];
-    
-    fPerm = fInputFile["ProblemData"]["Permeability"];
 
-    if(fInputFile["ProblemData"].find("VugPermeability") == fInputFile["ProblemData"].end() && fProblemType == 0) DebugStop();
+    // fVisc = fInputFile["ProblemData"]["FluidViscosity"];
 
-    if(fInputFile["ProblemData"].find("VugPermeability") != fInputFile["ProblemData"].end()) fVugPerm = fInputFile["ProblemData"]["VugPermeability"];
+    DomData domInput;
 
-    if(fInputFile["ProblemData"].find("FracPermeability") != fInputFile["ProblemData"].end()) fFracPerm = fInputFile["ProblemData"]["FracPermeability"];
+    for(auto& domain : fInputFile["DomainData"]){
+        if(domain.find("Name") == domain.end()) DebugStop(); // check if the information exists
 
-    fVisc = fInputFile["ProblemData"]["FluidViscosity"];
+        domInput.name = domain["Name"];
+        domInput.matId = domain["matId"];
+        domInput.permeability = domain["Permeability"];
+
+        fDomainDataVec.push_back(domInput);
+    }
 
     BcData bcInput;
 
@@ -860,7 +890,6 @@ ReadJson::ReadJson(std::string fileName){
 }
     
 std::string ReadJson::MeshName(){
-
     return fMeshName;
 }
 
@@ -870,16 +899,8 @@ std::string ReadJson::MeshFile(){
     return meshPath;
 }
 
-std::map<std::string, int> ReadJson::DomainData(){
-    return fDomainData;
-}
-
-std::map<std::string, int> ReadJson::VugData(){
-    return fVugData;
-}
-
-std::map<std::string, int> ReadJson::FracData(){
-    return fFracData;
+std::vector<DomData> ReadJson::DomainData(){
+    return fDomainDataVec;
 }
 
 int ReadJson::approxType(){
@@ -901,22 +922,10 @@ int ReadJson::dim(){
 int ReadJson::resolution(){
     return fResolution;
 }
-
-double ReadJson::perm(){
-    return fPerm;
-}
-
-double ReadJson::permVug(){
-    return fVugPerm;
-}
-
-double ReadJson::permFrac(){
-    return fFracPerm;
-}
     
-double ReadJson::visc(){
-    return fVisc;
-}
+// double ReadJson::visc(){
+//     return fVisc;
+// }
 
 std::vector<BcData> ReadJson::BCInput(){
     return fBcDataVec;

@@ -54,11 +54,17 @@ enum MatID{
     ELagrange = 6
 };
 
+struct DomData {
+    std::string name = "none"; // name of the gmesh tag
+    int matId = 0;
+    double permeability = 0.0;
+};
+
 struct BcData {
     std::string name = "none"; // name of the bc
     int matId = 0;
-    int type = 0; // bc type 
-    TPZManVector<double, 3>  value = {0.0, 0.0, 0.0}; // bc value
+    int type = 0; 
+    TPZManVector<double, 3>  value = {0.0, 0.0, 0.0}; 
 };
 
 extern std::set<int> vugBcIds;
@@ -79,11 +85,7 @@ public:
 
     std::string MeshFile();
 
-    std::map<std::string, int> DomainData();
-
-    std::map<std::string, int> VugData();
-
-    std::map<std::string, int> FracData();
+    std::vector<DomData> DomainData();
 
     int approxType();
 
@@ -95,13 +97,7 @@ public:
 
     int resolution();
 
-    double perm();
-
-    double permVug();
-
-    double permFrac();
-
-    double visc();
+    // double visc();
 
     std::vector<BcData> BCInput();
 
@@ -114,11 +110,13 @@ private:
     
     std::string fMeshDirectory;
 
-    std::map<std::string, int> fDomainData;
+    // std::map<std::string, int> fDomainData;
 
-    std::map<std::string, int> fVugData;
+    // std::map<std::string, int> fVugData;
 
-    std::map<std::string, int> fFracData;
+    // std::map<std::string, int> fFracData;
+
+    std::vector<DomData> fDomainDataVec;
     
     int fApproxType;
 

@@ -67,10 +67,12 @@ Physical Surface("k11", 1) = {1000};
 Physical Curve("inlet", 2) = {14};
 //+
 Physical Curve("outlet", 3) = {12};
-Physical Curve("top", 4) = {13};
-Physical Curve("bottom", 5) = {15};
+Physical Curve("top", 4) = {13,15};
+//Physical Curve("bottom", 5) = {15};
 //Physical Surface("Vugs",6)={11};
-Physical Curve("SmallFract",6)={16,17,18,19,20,21,22,23};
+Physical Curve("SmallFract",5)={16,17,18,19,20,21,22,23};
 
 Coherence;
 
+//+
+Physical Curve(" bottom", 5) -= {15, 13};

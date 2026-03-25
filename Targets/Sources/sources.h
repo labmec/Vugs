@@ -70,9 +70,11 @@ void MeshWithSegmentVugs(TPZGeoMesh *gmesh, std::set<int>  &vugBcIds, std::set<i
 
 void PrintCompMesh(TPZCompMesh *cmesh);
 
-void CreateInterfaceGeoEls(TPZGeoMesh *gmesh,std::set<int> &vugIds);
+//void CreateInterfaceGeoEls(TPZGeoMesh *gmesh,std::set<int> &vugIds);
+void CreateInterfaceGeoEls(TPZGeoMesh *gmesh);
 
-void InsertInterfaceEls(TPZMultiphysicsCompMesh *cmesh, TPZGeoMesh *gmesh, std::set<int> &vugIds,std::set<int> &vugBcIds);
+//void InsertInterfaceEls(TPZMultiphysicsCompMesh *cmesh, TPZGeoMesh *gmesh, std::set<int> &vugIds,std::set<int> &vugBcIds);
+void InsertInterfaceEls(TPZMultiphysicsCompMesh *cmesh, TPZGeoMesh *gmesh);
 
 TPZGeoMesh* generateGMeshWithPhysTagVec(std::string& filename, TPZManVector<std::map<std::string,int>,4>& dim_name_and_physical_tagFine);
 

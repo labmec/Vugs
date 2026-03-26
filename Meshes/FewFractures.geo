@@ -71,6 +71,7 @@ Physical Curve("top", 4) = {13,15};
 //Physical Curve("bottom", 5) = {15};
 //Physical Surface("Vugs",6)={11};
 Physical Curve("SmallFract",5)={16,17,18,19,20,21,22,23};
+Physical Point("FracEnds",10)={1,5,16,17,18,19,20,21};
 
 Coherence;
 

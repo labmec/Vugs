@@ -3,7 +3,7 @@
 
 void Hdiv_MixedCT(){
 
-    ReadJson inputData("/home/marina/programming/Stokes-Darcy-Research/VUGS/Inputs/FewFractures.json");
+    ReadJson inputData("/home/marina/programming/Stokes-Darcy-Research/VUGS/Inputs/FewVugs.json");
     
     TPZGeoMesh *gmesh = new TPZGeoMesh;
 
@@ -52,7 +52,11 @@ void Hdiv_MixedCT(){
         meshvec[1]= Pressure_cmesh;
         TPZMultiphysicsCompMesh *cmesh_mult = CreateMultiMesh(gmesh, meshvec, inputData);
 
-        PrintGeoMesh(gmesh);
+            // if (inputData.problemType() == 0){ // Frac boundary elements
+            //     CondenseEndFrac(cmesh_mult);
+            // }
+
+        PrintCompMesh(Flux_cmesh);
         PrintCompMesh(cmesh_mult);
 
         // const std::string strShape = "Shape.vtk";

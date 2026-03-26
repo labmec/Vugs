@@ -164,6 +164,8 @@ void SideOrientation(TPZCompMesh *cmesh);
 
 void DuplicateConnectFracture(TPZGeoMesh *gmesh, TPZCompMesh *cmesh);
 
+void CondenseEndFrac(TPZCompMesh* cmesh);
+
 void CreateInterfaceGeoEls(TPZGeoMesh *gmesh);
 
 void InsertInterfaceEls(TPZMultiphysicsCompMesh *cmesh, TPZGeoMesh *gmesh);

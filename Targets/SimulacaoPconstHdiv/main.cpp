@@ -534,21 +534,21 @@ int Hdiv_MixedCT_PvugConst(){
     TPZGeoMesh *gmesh = new TPZGeoMesh;
 
     TPZManVector<std::map<std::string,int>,4> dim_name_and_physical_tagCoarse(4);
-//    dim_name_and_physical_tagCoarse[3]["k11"] = 1;
-//    dim_name_and_physical_tagCoarse[2]["inlet"] = 2;
-//    dim_name_and_physical_tagCoarse[2]["outlet"] = 3;
-//    dim_name_and_physical_tagCoarse[2]["noflux"] = 4;
-//    dim_name_and_physical_tagCoarse[3]["Vugs"] = 6;
+    dim_name_and_physical_tagCoarse[3]["k11"] = 1;
+    dim_name_and_physical_tagCoarse[2]["inlet"] = 2;
+    dim_name_and_physical_tagCoarse[2]["outlet"] = 3;
+    dim_name_and_physical_tagCoarse[2]["noflux"] = 4;
+    dim_name_and_physical_tagCoarse[3]["Vugs"] = 6;
     
-    dim_name_and_physical_tagCoarse[2]["k11"] = 1;
-    dim_name_and_physical_tagCoarse[1]["inlet"] = 2;
-    dim_name_and_physical_tagCoarse[1]["outlet"] = 3;
-    dim_name_and_physical_tagCoarse[1]["noflux"] = 4;
-    dim_name_and_physical_tagCoarse[2]["Vugs"] = 6;
+//    dim_name_and_physical_tagCoarse[2]["k11"] = 1;
+//    dim_name_and_physical_tagCoarse[1]["inlet"] = 2;
+//    dim_name_and_physical_tagCoarse[1]["outlet"] = 3;
+//    dim_name_and_physical_tagCoarse[1]["noflux"] = 4;
+//    dim_name_and_physical_tagCoarse[2]["Vugs"] = 6;
 
     
-    std::string filename="/Users/victorvillegassalabarria/Documents/Github/Vugs/Malhas2D/FastMesh.msh";
-    //std::string filename="/Users/victorvillegassalabarria/Documents/Github/Vugs/Malhas3D/FastVug.msh";
+    //std::string filename="/Users/victorvillegassalabarria/Documents/Github/Vugs/Malhas2D/FastMesh.msh";
+    std::string filename="/Users/victorvillegassalabarria/Documents/Github/Vugs/Malhas3D/FastVug.msh";
 
     std::ofstream file20("TestGeoMesh3D_HdivConstP.vtk");
 
@@ -582,17 +582,19 @@ int Hdiv_MixedCT_PvugConst(){
     meshvec[1]= Pressure_cmesh;
     //SideOrientation(Flux_cmesh);
 
-    TPZMixedDarcyFlow *matDarcy = new TPZMixedDarcyFlow(EMatId,2);
-    
-    //TODO VERIFICAR SE É ISSO fazer para cada vug
-    for(auto vugId: vugIds) {
-        std::cout<<"Vug index: "<<vugId<<std::endl;
+    TPZMixedDarcyFlow *matDarcy = new TPZMixedDarcyFlow(EMatId,3);
+    TPZMixedDarcyFlow *matDarcyVugs = new TPZMixedDarcyFlow(600,3);
+    //cmesh_mult->InsertMaterialObject(matCV);
 
-        TPZMixedDarcyFlow *matDarcyVugs= new TPZMixedDarcyFlow(vugId,2);
-        cmesh_mult->InsertMaterialObject(matDarcyVugs);
-    }
+    //TODO VERIFICAR SE É ISSO fazer para cada vug
+//    for(auto vugId: vugIds) {
+//        std::cout<<"Vug index: "<<vugId<<std::endl;
+//
+//        TPZMixedDarcyFlow *matDarcyVugs= new TPZMixedDarcyFlow(vugId,3);
+//        cmesh_mult->InsertMaterialObject(matDarcyVugs);
+//    }
     cmesh_mult->InsertMaterialObject(matDarcy);
-    //cmesh_mult->InsertMaterialObject(matDarcyVugs);
+    cmesh_mult->InsertMaterialObject(matDarcyVugs);
     matDarcy->SetConstantPermeability(0.01);
 
     int bc_id=2;
@@ -612,13 +614,14 @@ int Hdiv_MixedCT_PvugConst(){
     val2[0]=10; // Valor a ser impuesto como presión en la salida
     TPZBndCond * face1 = matDarcy->CreateBC(matDarcy,EbcOutletId,bc_typeD,val1,val2);
     cmesh_mult->InsertMaterialObject(face1);
-    int PContornoVug=0;
-    val2[0]=PContornoVug;
+    //int PContornoVug=10;
+    //val2[0]=PContornoVug;
     TPZBndCond *faceVug = matDarcy->CreateBC(matDarcy,100,bc_typeD,val1,val2);
     cmesh_mult->InsertMaterialObject(faceVug);
 //    for(auto bcId: vugBcIds) {
 //        std::cout<<"Bc index: "<<bcId<<std::endl;
-//
+//        TPZBndCond *faceVug = matDarcy->CreateBC(matDarcy,bcId,bc_typeD,val1,val2);
+//        cmesh_mult->InsertMaterialObject(faceVug);
 //
 //    }
 
@@ -681,6 +684,18 @@ int Hdiv_MixedCT_PvugConst(){
           auto vtk = TPZVTKGenerator(cmesh_mult, fields, plotfile, vtkRes);
           vtk.Do();
         }
+        std::set<int> matToProc;
+        matToProc.insert(600);
+        std::string file_reservoir2("VugVictor2_Hdiv.vtk");
+
+        //Analisys->DefineGraphMesh(3,matToProc,scalnames, file_reservoir2, vtkRes);
+        constexpr int vtkRes{0};
+        //Definición de variables escalares y vectoriales a posprocesar
+        TPZStack<std::string,10> scalnames, vecnames;
+        vecnames.Push("Flux");
+        scalnames.Push("Pressure");
+        auto vtk2 = TPZVTKGenerator(cmesh_mult, matToProc,scalnames,file_reservoir2, vtkRes);
+        vtk2.Do();
 
         // --- Clean up ---
         delete cmesh_mult;
@@ -689,6 +704,9 @@ int main (){
     //Hdiv_MixedCT();
     //Hdiv_Fract();
     //Hdiv_MixedCT_constP();
+#ifdef PZ_LOG
+    TPZLogger::InitializePZLOG();
+#endif
     Hdiv_MixedCT_PvugConst();
     return 0;
 }

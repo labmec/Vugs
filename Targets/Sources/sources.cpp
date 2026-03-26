@@ -124,7 +124,7 @@ void MeshWithSegmentVugs(TPZGeoMesh *gmesh,std::set<int> &vugBcIds,std::set<int>
     int matid_vug=6;
     int meshdim=gmesh->Dimension();
 
-    int mat = EVugBcId;
+    int mat = 100;
     
     TPZVec<int64_t> verificador(nels,-1);
   
@@ -306,6 +306,7 @@ void insertAtomicMaterials(TPZCompMesh *cmesh, std::set<int> matIdsVol, std::set
             if(iD<499){
                 TPZNullMaterial <STATE> *matDarcy = new TPZNullMaterial(iD, dim);
                 cmesh->InsertMaterialObject(matDarcy);
+                TPZNullMaterial <STATE> *matDarcyV = new TPZNullMaterial(600, dim);
 
                 int bc_id=2;
                 int bc_typeN = 1;
@@ -316,13 +317,14 @@ void insertAtomicMaterials(TPZCompMesh *cmesh, std::set<int> matIdsVol, std::set
                 TPZBndCond * face2 = matDarcy->CreateBC(matDarcy,EbcNoFlux,bc_typeN,val1,val2);
                 cmesh->InsertMaterialObject(face2);
 
-                               //val2[0]=10; // Valor a ser impuesto como presión en la entrada
+                val2[0]=10; // Valor a ser impuesto como presión en la entrada
                 TPZBndCond * face = matDarcy->CreateBC(matDarcy,EbcInletId,bc_typeD,val1,val2);
                 cmesh->InsertMaterialObject(face);
 
-                               //val2[0]=100; // Valor a ser impuesto como presión en la salida
+                val2[0]=100; // Valor a ser impuesto como presión en la salida
                 TPZBndCond * face1 = matDarcy->CreateBC(matDarcy,EbcOutletId,bc_typeD,val1,val2);
                 cmesh->InsertMaterialObject(face1);
+                //val2[0]=10;
                 TPZBndCond *faceVug = matDarcy->CreateBC(matDarcy,100,bc_typeD,val1,val2);
                 cmesh->InsertMaterialObject(faceVug);
                                //val2[0] = 30;
@@ -339,19 +341,29 @@ void insertAtomicMaterials(TPZCompMesh *cmesh, std::set<int> matIdsVol, std::set
                //            TPZNullMaterial <STATE> *matDarcy = new TPZNullMaterial(iD, dim);
                //            cmesh->InsertMaterialObject(matDarcy);
                            std::cout<<"vug cont iD: "<<iD<<std::endl;
-                           if (iD==100){
-                           TPZNullMaterial<STATE> * face2 = new TPZNullMaterial(iD, dim-1);
-                           cmesh->InsertMaterialObject(face2);
+//                           if (iD==100){
+//                           TPZNullMaterial<STATE> * face2 = new TPZNullMaterial(iD, 1);
+//                           cmesh->InsertMaterialObject(face2);
                            
                            
-                           }
+                           //}
 
                        }
                    }
                    else if (typeMesh==1){//Se for malha de pressão
                        for (auto iD:matIdsVol) {
+                           int bc_id=2;
+                           int bc_typeN = 1;
+                           int bc_typeD = 0;
+                           TPZFMatrix<STATE> val1(1,1,0.0);
+                           TPZVec<STATE> val2(1,0.0);
+                            std::cout<<"Material Pressure: "<<iD<<std::endl;
                            TPZNullMaterial <STATE> *matDarcy = new TPZNullMaterial(iD, dim); //TODO Vug elements
                            cmesh->InsertMaterialObject(matDarcy);
+//                           if(iD==600){
+                           //TPZBndCond *faceVug = matDarcy->CreateBC(matDarcy,100,bc_typeD,val1,val2);
+                           //cmesh->InsertMaterialObject(faceVug);
+//                           }
                            // if(iD<599){
                            // std::cout<<"Material: "<<iD<<std::endl;
                            // TPZNullMaterial <STATE> *matDarcy = new TPZNullMaterial(iD, dim);
@@ -428,7 +440,7 @@ TPZCompMesh *CreateFluxMesh(TPZGeoMesh *gmesh, std::set<int> &volId, std::set<in
     //cmesh->CleanUpUnconnectedNodes();
     //SetUniqueVugConnect(gmesh, cmesh);
     //cmesh->InitializeBlock();
-    //SideOrientation(cmesh);
+    SideOrientation(cmesh);
     //std::cout<<cmesh->NEquations() <<std::endl;
     return cmesh;
 }

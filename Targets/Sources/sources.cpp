@@ -392,7 +392,7 @@ TPZCompMesh *CreateFluxMesh(TPZGeoMesh *gmesh, std::set<int> &elsId, std::set<in
     cmesh->AutoBuild();
 
     DuplicateConnectFracture(gmesh, cmesh); 
-    SideOrientation(cmesh);
+    //SideOrientation(cmesh);
 
     gmesh->ResetReference();
 

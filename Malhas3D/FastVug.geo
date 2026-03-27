@@ -262,12 +262,13 @@ Plane Surface(10024) = {10023};
 Surface Loop(10025) = {10014, 10016, 10018, 10020, 10022, 10024,1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38};
 Physical Surface("inlet",2)={10024};
 Physical Surface("outlet",3)={10020};
-Physical Surface("noflux",4)={10022,10014,10016,10018};
+Physical Surface("Top",4)={10022,10014,10016,10018};
+//Physical Surface("Bottom",5)={10016,10018};
 
 Volume(1) = {10025};
 
 
-Physical Volume("k11", 1) = {1};
+Physical Volume("Darcy", 1) = {1};
 //BooleanCut{ Volume{1}; Delete; }{ Volume{2}; Delete; }
 //+
 Surface Loop(10026) = {10016, 10018, 10014, 10020, 10022, 10024};

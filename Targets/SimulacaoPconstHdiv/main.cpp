@@ -5,8 +5,9 @@ void Hdiv_MixedCT(){
 
     //ReadJson inputData("/home/marina/programming/Stokes-Darcy-Research/VUGS/Inputs/FewVugs.json");
     //ReadJson inputData("/Users/victorvillegassalabarria/Documents/Github/Vugs/Inputs/FewVugs_V.json");//WORKS OK
-    ReadJson inputData("/Users/victorvillegassalabarria/Documents/Github/Vugs/Inputs/SingleVug3D.json");// Breaking on side oriented(flux_cmesh), after comment it. it works well
-    
+    //ReadJson inputData("/Users/victorvillegassalabarria/Documents/Github/Vugs/Inputs/SingleVug3D.json");// Breaking on side oriented(flux_cmesh), after comment it. it works well
+    ReadJson inputData("/Users/victorvillegassalabarria/Documents/Github/Vugs/Inputs/FewVugsFracts.json");// Testing both vugs&fract in a same mesh, for the first test it breaks on the TPZAnalyisis(Maybe I should make corrections at the .json file)
+
 
     TPZGeoMesh *gmesh = new TPZGeoMesh;
 

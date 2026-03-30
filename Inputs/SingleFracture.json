@@ -17,15 +17,15 @@
     {
       "Name" : "SmallFract",
       "matId" : 5,
-      "Permeability" : 1.0e6
+      "Permeability" : 0.01
     }
   ],
   "BCs": [
     {
       "Name" : "noflux",
       "matId" : 4,
-      "Type" : 1, //Dirichlet: 0, Neumann: 1
-      "Value" : 0
+      "Type" : 0, //Dirichlet: 0, Neumann: 1
+      "Value" : 1
     },
     // {
     //   "Name" : "bottom",
@@ -37,13 +37,21 @@
       "Name" : "inlet",
       "matId" : 2,
       "Type" : 0, 
-      "Value" : 100
+      "Value" : 1
     },
     {
       "Name" : "outlet",
       "matId" : 3,
       "Type" : 0, 
-      "Value" : 10
+      "Value" : 1 
+    }
+  ],
+"FracBCs": [
+    {
+      "Name" : "FracEnds",
+      "matId" : 10,
+      "Type" : 1, 
+      "Value" : 0
     }
   ]
 }

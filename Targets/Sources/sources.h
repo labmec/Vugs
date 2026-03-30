@@ -101,6 +101,8 @@ public:
 
     std::vector<BcData> BCInput();
 
+    std::vector<BcData> FracBCInput();
+
 
 private:
 
@@ -109,12 +111,6 @@ private:
     std::string fMeshName;
     
     std::string fMeshDirectory;
-
-    // std::map<std::string, int> fDomainData;
-
-    // std::map<std::string, int> fVugData;
-
-    // std::map<std::string, int> fFracData;
 
     std::vector<DomData> fDomainDataVec;
     
@@ -137,6 +133,8 @@ private:
     double fVisc;
 
     std::vector<BcData> fBcDataVec;
+
+    std::vector<BcData> fFracBcVec;
 
 };
 
@@ -161,6 +159,8 @@ void MeshWithSegmentPhil(ReadJson inputData, TPZGeoMesh *gmesh);
 void MeshWithSegment(ReadJson inputData, TPZGeoMesh *gmesh);
 
 void SideOrientation(TPZCompMesh *cmesh);
+
+void SideOrientation1D(TPZCompMesh *cmesh);
 
 void DuplicateConnectFracture(TPZGeoMesh *gmesh, TPZCompMesh *cmesh);
 

@@ -158,7 +158,7 @@ void MeshWithSegmentPhil(ReadJson inputData, TPZGeoMesh *gmesh);
 
 void MeshWithSegment(ReadJson inputData, TPZGeoMesh *gmesh);
 
-void SideOrientation(TPZCompMesh *cmesh);
+void SideOrientation(TPZCompMesh *cmesh, ReadJson inputData);
 
 void SideOrientation1D(TPZCompMesh *cmesh);
 
@@ -168,7 +168,7 @@ void CondenseEndFrac(TPZCompMesh* cmesh);
 
 void CreateInterfaceGeoEls(TPZGeoMesh *gmesh);
 
-void InsertInterfaceEls(TPZMultiphysicsCompMesh *cmesh, TPZGeoMesh *gmesh);
+void InsertInterfaceEls(TPZMultiphysicsCompMesh *cmesh, TPZGeoMesh *gmesh, ReadJson inputData);
 
 void Solve(TPZLinearAnalysis* an, TPZCompMesh* cmesh, ReadJson inputData);
 

@@ -46,7 +46,7 @@
       "Value" : 1 
     }
   ],
-"FracBCs": [
+  "FracBCs": [
     {
       "Name" : "FracEnds",
       "matId" : 10,

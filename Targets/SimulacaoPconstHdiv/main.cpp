@@ -3,7 +3,7 @@
 
 void Hdiv_MixedCT(){
 
-    ReadJson inputData("/home/marina/programming/Stokes-Darcy-Research/VUGS/Inputs/SingleFracture.json");
+    ReadJson inputData("/home/marina/programming/Stokes-Darcy-Research/VUGS/Inputs/FewVugs.json");
     
     TPZGeoMesh *gmesh = new TPZGeoMesh;
 
@@ -27,6 +27,12 @@ void Hdiv_MixedCT(){
     }
     else if(approxType == 1){
         approxName = "_Mixed";
+    }
+    if(problemType == 0){
+        approxName += "_0";
+    }
+    else if(problemType == 1){
+        approxName += "_1";
     }
 
     gmesh = generateGMeshWithPhysTagVec(inputData, filename, meshName);
@@ -70,7 +76,7 @@ void Hdiv_MixedCT(){
         {
             const std::string plotfile = meshName + approxName;
             constexpr int vtkRes{0};
-            TPZManVector<std::string, 2> fields = {"Flux", "Pressure", "GradFluxX"};
+            TPZManVector<std::string, 3> fields = {"Flux", "Pressure", "GradFluxX"};
             auto vtk = TPZVTKGenerator(cmesh_mult, fields, plotfile, vtkRes);
             vtk.Do();
         }
@@ -91,19 +97,21 @@ void Hdiv_MixedCT(){
         Analisys->LoadSolution();
         Solve(Analisys, cmesh, inputData);
 
-        //Definición de variables escalares y vectoriales a posprocesar
-        TPZStack<std::string,10> scalnames, vecnames;
-        vecnames.Push("Flux");
-        vecnames.Push("GradU");
-        scalnames.Push("Pressure");
+        {
+            const std::string plotfile = meshName + approxName;
+            constexpr int vtkRes{0};
+            TPZManVector<std::string, 3> fields = {"Flux", "Pressure", "GradU"};
+            auto vtk = TPZVTKGenerator(cmesh, fields, plotfile, vtkRes);
+            vtk.Do();
+        }
         
-        //Configuración del posprocesamiento
-        int ref = 0; 
-        std::string plotfile = meshName + approxName + ".vtk";
+        // //Configuración del posprocesamiento
+        // int ref = 0; 
+        // std::string plotfile = meshName + approxName + ".vtk";
   
-        Analisys->DefineGraphMesh(problemDim, scalnames, vecnames, plotfile);
+        // Analisys->DefineGraphMesh(problemDim, scalnames, vecnames, plotfile);
         
-        Analisys->PostProcess(ref, problemDim);
+        // Analisys->PostProcess(ref, problemDim);
     }
 }
 

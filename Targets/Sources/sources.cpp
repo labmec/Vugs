@@ -81,7 +81,7 @@ void MeshWithSegmentPhil(ReadJson inputData, TPZGeoMesh *gmesh){
             int gelDim = gelcheck->Dimension();
             verificador[elcheck] = VugBcMatId;
             gelcheck->SetMaterialId(VugBcMatId+500);  
-            //vugBcIds.insert(mat); //TODO MELHORAR ISSO
+            //vugBcIds.insert(mat); 
             vugIds.insert(VugBcMatId+500);
             vugBcIds.insert(VugBcMatId);
 
@@ -326,12 +326,19 @@ void insertAtomicMaterials(TPZCompMesh *cmesh, std::set<int> matIdsEls, std::set
                     TPZBndCond *faceVug = matDarcy->CreateBC(matDarcy, bcId, 0, val1, val2);
                     cmesh->InsertMaterialObject(faceVug);
                 }
-                for(auto bcId: vugBcIds) {
+                for(auto bcId: vugBcIds) { 
+                    //if(problemType == 0) break;
                     TPZBndCond *faceVug = matDarcy->CreateBC(matDarcy, bcId, 0, val1, val2);
                     cmesh->InsertMaterialObject(faceVug);
                 }
-            }           
+            }         
         }
+        if(inputData.problemType() == 0){
+            for(auto Id: vugIds) {
+                TPZNullMaterial <STATE> *matVug = new TPZNullMaterial(Id, dim);
+                cmesh->InsertMaterialObject(matVug);
+            }
+        }  
     }
     else if (typeMesh == 1){ //if pressure mesh
         int elDim;
@@ -395,41 +402,41 @@ TPZCompMesh *CreateFluxMesh(TPZGeoMesh *gmesh, std::set<int> &elsId, std::set<in
 
     cmesh->ApproxSpace().SetAllCreateFunctionsHDiv(meshdim);
     
-    std::set<int> matIdBuid = bcId;
-    matIdBuid.insert(EMatId);
-    cmesh->AutoBuild(matIdBuid);
+    // std::set<int> matIdBuid = bcId;
+    // matIdBuid.insert(EMatId);
+    cmesh->AutoBuild();
 
     DuplicateConnectFracture(gmesh, cmesh); 
 
     gmesh->ResetReference();
 
-    if(problemType == 0){ 
+    if(problemType == 0 && !fracIds.empty()){ 
         cmesh->Reference()->ResetReference();
         std::vector<BcData> bcData = inputData.FracBCInput();
         cmesh->SetDimModel(1);
-        cmesh->SetDefaultOrder(1); //!ASK
+        cmesh->SetDefaultOrder(1);
 
         for(auto Id: fracIds) {
             TPZNullMaterial <STATE> *matFrac = new TPZNullMaterial(Id, 1);
             cmesh->InsertMaterialObject(matFrac);
         }
 
+        std::set<int> newIds = fracIds;
+
         TPZFMatrix<STATE> val1(1,1,0.0);
         TPZVec<STATE> val2(1,0.0);
         TPZNullMaterial <STATE> *matEndFrac = new TPZNullMaterial(bcData[0].matId, 1); 
         TPZBndCond *endFrac = matEndFrac->CreateBC(matEndFrac, bcData[0].matId, bcData[0].type, val1, val2);
         cmesh->InsertMaterialObject(matEndFrac);
-
         cmesh->ApproxSpace().SetAllCreateFunctionsHDiv(1);
-        std::set<int> newIds = fracIds;
+
         newIds.insert(bcData[0].matId);
+        
         cmesh->AutoBuild(newIds);
         SideOrientation1D(cmesh);
     } 
 
-    PrintCompMesh(cmesh);
-
-    SideOrientation(cmesh);
+    SideOrientation(cmesh, inputData); //TODO
 
     cmesh->LoadReferences();
     // cmesh->CleanUpUnconnectedNodes();
@@ -508,6 +515,7 @@ TPZMultiphysicsCompMesh *CreateMultiMesh(TPZGeoMesh* gmesh, TPZVec<TPZCompMesh *
     int bcType = 0;
     int bcId = 0;
     TPZManVector<double, 3> bcValue;
+    std::vector<BcData> FracbcData = inputData.FracBCInput();
     
     // Add materials (weak formulation)
     TPZMixedDarcyFlow *matDarcy = new TPZMixedDarcyFlow(EMatId, inputData.dim());
@@ -550,12 +558,13 @@ TPZMultiphysicsCompMesh *CreateMultiMesh(TPZGeoMesh* gmesh, TPZVec<TPZCompMesh *
     }
 
     for(auto bcId: vugBcIds) { // Vug boundary elements 
+        //if(inputData.problemType() == 0) break;
         TPZBndCond *faceVug = matDarcy->CreateBC(matDarcy, bcId, 0, val1, val2);
         cmesh->InsertMaterialObject(faceVug);
     }
 
-    if (inputData.problemType() == 0){ // Frac boundary elements
-        TPZBndCond *endFrac = matDarcy->CreateBC(matDarcy, 10, 1, val1, val2); //TODO
+    if (inputData.problemType() == 0 && !fracIds.empty()){ // Frac boundary elements
+        TPZBndCond *endFrac = matDarcy->CreateBC(matDarcy, FracbcData[0].matId, FracbcData[0].type, val1, val2); 
         cmesh->InsertMaterialObject(endFrac);
     }
 
@@ -564,8 +573,8 @@ TPZMultiphysicsCompMesh *CreateMultiMesh(TPZGeoMesh* gmesh, TPZVec<TPZCompMesh *
     cmesh->BuildMultiphysicsSpace(meshvec);
     cmesh->CleanUpUnconnectedNodes();
 
-    CreateInterfaceGeoEls(gmesh);
-    InsertInterfaceEls(cmesh, gmesh); 
+    CreateInterfaceGeoEls(gmesh); 
+    InsertInterfaceEls(cmesh, gmesh, inputData); 
 
     cmesh->InitializeBlock();
 
@@ -638,8 +647,6 @@ TPZCompMesh *CreateMesh(TPZGeoMesh* gmesh, ReadJson inputData){
 
     cmesh->AutoBuild();
 
-    PrintCompMesh(cmesh);
-
     if(inputData.problemType() == 1) SetUniqueVugConnect(gmesh, cmesh);
 
     cmesh->CleanUpUnconnectedNodes();
@@ -688,7 +695,7 @@ void CreateInterfaceGeoEls(TPZGeoMesh *gmesh){
 }
 
 
-void InsertInterfaceEls(TPZMultiphysicsCompMesh *cmesh, TPZGeoMesh *gmesh){
+void InsertInterfaceEls(TPZMultiphysicsCompMesh *cmesh, TPZGeoMesh *gmesh, ReadJson inputData){
     //Interface between Hdiv (boundary) element and Pressure (vug or frac) element
 
     TPZLagrangeMultiplierCS<STATE> *matInterface = new TPZLagrangeMultiplierCS<STATE>(ELagrange, gmesh->Dimension()-1, 1);
@@ -729,6 +736,8 @@ void InsertInterfaceEls(TPZMultiphysicsCompMesh *cmesh, TPZGeoMesh *gmesh){
             neighPressure = gelSide.HasNeighbour(id).Reference();
             if(neighPressure) break;
         }
+
+        if(inputData.problemType() == 0 && (vugIds.find(neighPressure.Element()->Reference()->MaterialId()) != vugIds.end())) continue;
 
         TPZGeoElSide neighbour = gelSide.Neighbour();
         int neighIndex = 0;
@@ -783,7 +792,7 @@ void PrintGeoMesh(TPZGeoMesh *gmesh)
 }
 
 
-void SideOrientation(TPZCompMesh *cmesh){ //CheckSideOrientation(TPZCompMesh *cmesh, TPZInterpolationSpace *intEl);
+void SideOrientation(TPZCompMesh *cmesh, ReadJson inputData){ //CheckSideOrientation(TPZCompMesh *cmesh, TPZInterpolationSpace *intEl);
 
     for(int el = 0; el < cmesh->NElements(); el++){
         TPZCompEl *cel = cmesh->Element(el);
@@ -799,8 +808,8 @@ void SideOrientation(TPZCompMesh *cmesh){ //CheckSideOrientation(TPZCompMesh *cm
             TPZGeoElSide gelSide(gel, side);
             TPZGeoElSide neigh = gelSide.HasNeighbour(vugBcIds);
             if(!neigh) neigh = gelSide.HasNeighbour(fracBcIds);
-            TPZGeoElSide neighFrac = neigh.HasNeighbour(fracIds);
-            if(neigh){                
+            if(neigh){     
+                if(inputData.problemType() == 0 && (vugBcIds.find(neigh.Element()->MaterialId()) != vugBcIds.end())) continue;          
                 TPZInterpolatedElement *intel = dynamic_cast<TPZInterpolatedElement *>(cel);
                 int orientation = intel->GetSideOrient(side);
                 std::cout << orientation << "\n";
@@ -811,7 +820,7 @@ void SideOrientation(TPZCompMesh *cmesh){ //CheckSideOrientation(TPZCompMesh *cm
     }
 }  
 
-//TODO Still want to check
+
 void DuplicateConnectFracture(TPZGeoMesh *gmesh, TPZCompMesh *cmesh){
     int nels = gmesh->NElements();
     std::set<int> neighIndices; // set to store el indeces that has already been analyzed
@@ -887,19 +896,6 @@ void CondenseEndFrac(TPZCompMesh* cmesh){
         if(gel->MaterialId() != 10) continue;
         endFracConn = cel->Connect(0); //! Dont know if it is right
         endFracConn.SetCondensed(true);
-
-
-        // if(fracIds.find(gel->MaterialId()) == fracIds.end()) continue;
-
-        // for(int side = 0; side < gel->NCornerNodes(); side++){
-        //     TPZGeoElSide gelside(gel, side);
-        //     if(gelside.HasNeighbour(fracIds)) continue;
-        //     TPZCompElSide celside = gelside.Reference();
-        //     // int64_t connectindex = celside.ConnectIndex();
-        //     // endFracConn = cmesh->ConnectVec()[connectindex];
-        //     endFracConn = cel->Connect(side); //! Dont know if it is right
-        //     endFracConn.SetCondensed(true);
-        // }
     }
     cmesh->ComputeNodElCon();
     cmesh->CleanUpUnconnectedNodes();

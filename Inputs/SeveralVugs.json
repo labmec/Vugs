@@ -37,13 +37,13 @@
       "Name" : "inlet",
       "matId" : 2,
       "Type" : 0, 
-      "Value" : 100
+      "Value" : 10
     },
     {
       "Name" : "outlet",
       "matId" : 3,
       "Type" : 0, 
-      "Value" : 10
+      "Value" : 100
     }
   ]
 }

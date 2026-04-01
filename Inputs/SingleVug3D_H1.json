@@ -1,0 +1,49 @@
+{
+  "MeshName" : "FastVug",
+  "MeshDirectory" : "/Users/victorvillegassalabarria/Documents/Github/Vugs/Malhas3D/",
+  "Simulation" : {
+    "ApproximationType" : 0, //H1: 0, Hdiv: 1
+    "ProblemType" : 1 //High Permeability: 0, Constant Pressure: 1
+  },
+  "PressurepOrder": 1,
+  "Dimension": 3,
+  "Resolution": 1,
+  "DomainData" : [
+    {
+      "Name" : "Darcy",
+      "matId" : 1,
+      "Permeability" : 0.01
+    },
+    {
+      "Name" : "Vugs",
+      "matId" : 6,
+      "Permeability" : 1.0e6
+    }
+  ],
+  "BCs": [
+    {
+      "Name" : "Top",
+      "matId" : 4,
+      "Type" : 1, //Dirichlet: 0, Neumann: 1
+      "Value" : 0
+    },
+    // {
+    //   "Name" : "bottom",
+    //   "matId" : 4,
+    //   "Type" : 1, 
+    //   "Value" : 0
+    // },
+    {
+      "Name" : "inlet",
+      "matId" : 2,
+      "Type" : 0, 
+      "Value" : 100
+    },
+    {
+      "Name" : "outlet",
+      "matId" : 3,
+      "Type" : 0, 
+      "Value" : 10
+    }
+  ]
+}

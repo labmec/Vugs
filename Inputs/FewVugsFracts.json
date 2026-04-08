@@ -1,5 +1,5 @@
 {
-  "MeshName" : "FractureVug",
+  "MeshName" : "FractureVugNewOk",
   "MeshDirectory" : "/Users/victorvillegassalabarria/Documents/Github/Vugs/Meshes/",
   "Simulation" : {
     "ApproximationType" : 0, //H1: 0, Hdiv: 1

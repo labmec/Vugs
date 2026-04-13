@@ -1,0 +1,195 @@
+Info    : Calling 'open -t "/Users/victorvillegassalabarria/Documents/Github/Vugs/Malhas3D/rock_volume1Fracture.geo" &'
+Info    : Reading '/Users/victorvillegassalabarria/Documents/Github/Vugs/Malhas3D/rock_volume1Fracture.geo'...
+Info    : Done reading '/Users/victorvillegassalabarria/Documents/Github/Vugs/Malhas3D/rock_volume1Fracture.geo'
+Info    : Meshing 1D...
+Info    : Meshing curve 1 (Line)
+Info    : Meshing curve 2 (Line)
+Info    : Meshing curve 3 (Line)
+Info    : Meshing curve 4 (Line)
+Info    : Meshing curve 5 (Line)
+Info    : Meshing curve 6 (Line)
+Info    : Meshing curve 7 (Line)
+Info    : Meshing curve 8 (Line)
+Info    : Meshing curve 9 (Line)
+Info    : Meshing curve 10 (Line)
+Info    : Meshing curve 11 (Line)
+Info    : Meshing curve 12 (Line)
+Info    : Meshing curve 100 (Line)
+Info    : Meshing curve 101 (Line)
+Info    : Meshing curve 102 (Line)
+Info    : Meshing curve 103 (Line)
+Info    : Done meshing 1D (Wall 0.00133372s, CPU 0.001297s)
+Info    : Meshing 2D...
+Info    : Meshing surface 14 (Plane, Frontal-Delaunay)
+Info    : Meshing surface 16 (Plane, Frontal-Delaunay)
+Info    : Meshing surface 18 (Plane, Frontal-Delaunay)
+Info    : Meshing surface 20 (Plane, Frontal-Delaunay)
+Info    : Meshing surface 22 (Plane, Frontal-Delaunay)
+Info    : Meshing surface 24 (Plane, Frontal-Delaunay)
+Info    : Meshing surface 105 (Plane, Frontal-Delaunay)
+Info    : Done meshing 2D (Wall 0.00380972s, CPU 0.003792s)
+Info    : 99 nodes 244 elements
+Info    : Calling 'open -t "/Users/victorvillegassalabarria/Documents/Github/Vugs/Malhas3D/rock_volume1Fracture.geo" &'
+Info    : Reading '/Users/victorvillegassalabarria/python-test/Dissertação/Skeletonize/CTMesh/outputCoarseDE2.geo'...
+Info    : Done reading '/Users/victorvillegassalabarria/python-test/Dissertação/Skeletonize/CTMesh/outputCoarseDE2.geo'
+Info    : Calling 'open -t "/Users/victorvillegassalabarria/python-test/Dissertação/Skeletonize/CTMesh/outputCoarseDE2.geo" &'
+Info    : Reading '/Users/victorvillegassalabarria/Documents/Github/Vugs/Malhas3D/FastVug.geo'...
+Info    : Done reading '/Users/victorvillegassalabarria/Documents/Github/Vugs/Malhas3D/FastVug.geo'
+Info    : Calling 'open -t "/Users/victorvillegassalabarria/Documents/Github/Vugs/Malhas3D/FastVug.geo" &'
+Info    : Reading '/Users/victorvillegassalabarria/Documents/Github/Vugs/Malhas3D/FastVug.geo'...
+Info    : Done reading '/Users/victorvillegassalabarria/Documents/Github/Vugs/Malhas3D/FastVug.geo'
+Info    : Reading '/Users/victorvillegassalabarria/Documents/Github/Vugs/Malhas3D/rock_volume1Fracture.geo'...
+Info    : Done reading '/Users/victorvillegassalabarria/Documents/Github/Vugs/Malhas3D/rock_volume1Fracture.geo'
+Info    : Calling 'open -t "/Users/victorvillegassalabarria/Documents/Github/Vugs/Malhas3D/rock_volume1Fracture.geo" &'
+Info    : Reading '/Users/victorvillegassalabarria/Documents/Github/Vugs/Malhas3D/rock_volume1Fracture.geo'...
+Info    : Done reading '/Users/victorvillegassalabarria/Documents/Github/Vugs/Malhas3D/rock_volume1Fracture.geo'
+Info    : Meshing 1D...
+Info    : Meshing curve 1 (Line)
+Info    : Meshing curve 2 (Line)
+Info    : Meshing curve 3 (Line)
+Info    : Meshing curve 4 (Line)
+Info    : Meshing curve 5 (Line)
+Info    : Meshing curve 6 (Line)
+Info    : Meshing curve 7 (Line)
+Info    : Meshing curve 8 (Line)
+Info    : Meshing curve 9 (Line)
+Info    : Meshing curve 10 (Line)
+Info    : Meshing curve 11 (Line)
+Info    : Meshing curve 12 (Line)
+Info    : Meshing curve 100 (Line)
+Info    : Meshing curve 101 (Line)
+Info    : Meshing curve 102 (Line)
+Info    : Meshing curve 103 (Line)
+Info    : Done meshing 1D (Wall 0.00140653s, CPU 0.001349s)
+Info    : Meshing 2D...
+Info    : Meshing surface 14 (Plane, Frontal-Delaunay)
+Info    : Meshing surface 16 (Plane, Frontal-Delaunay)
+Info    : Meshing surface 18 (Plane, Frontal-Delaunay)
+Info    : Meshing surface 20 (Plane, Frontal-Delaunay)
+Info    : Meshing surface 22 (Plane, Frontal-Delaunay)
+Info    : Meshing surface 24 (Plane, Frontal-Delaunay)
+Info    : Meshing surface 105 (Plane, Frontal-Delaunay)
+Info    : Done meshing 2D (Wall 0.00362114s, CPU 0.003596s)
+Info    : 99 nodes 244 elements
+Info    : Meshing 3D...
+Info    : 3D Meshing 1 volume with 1 connected component
+Info    : Tetrahedrizing 99 nodes...
+Info    : Done tetrahedrizing 107 nodes (Wall 0.00096157s, CPU 0.000925s)
+Info    : Reconstructing mesh...
+Info    :  - Creating surface mesh
+Info    :  - Identifying boundary edges
+Info    :  - Recovering boundary
+Info    : Done reconstructing mesh (Wall 0.0021701s, CPU 0.002063s)
+Info    : Found volume 31
+Info    : It. 0 - 0 nodes created - worst tet radius 1.34227 (nodes removed 0 0)
+Info    : 3D refinement terminated (103 nodes total):
+Info    :  - 0 Delaunay cavities modified for star shapeness
+Info    :  - 0 nodes could not be inserted
+Info    :  - 282 tetrahedra created in 0.000355344 sec. (793597 tets/s)
+Info    : 0 node relocations
+Info    : Done meshing 3D (Wall 0.00578014s, CPU 0.005521s)
+Info    : Optimizing mesh...
+Info    : Optimizing volume 31
+Info    : Optimization starts (volume = 3.78939e+08) with worst = 0.0532676 / average = 0.768008:
+Info    : 0.00 < quality < 0.10 :         1 elements
+Info    : 0.10 < quality < 0.20 :         2 elements
+Info    : 0.20 < quality < 0.30 :         1 elements
+Info    : 0.30 < quality < 0.40 :         4 elements
+Info    : 0.40 < quality < 0.50 :        10 elements
+Info    : 0.50 < quality < 0.60 :        14 elements
+Info    : 0.60 < quality < 0.70 :        51 elements
+Info    : 0.70 < quality < 0.80 :        72 elements
+Info    : 0.80 < quality < 0.90 :        63 elements
+Info    : 0.90 < quality < 1.00 :        64 elements
+Info    : 4 edge swaps, 0 node relocations (volume = 3.78939e+08): worst = 0.301963 / average = 0.778121 (Wall 0.000195814s, CPU 0.000195s)
+Info    : No ill-shaped tets in the mesh :-)
+Info    : 0.00 < quality < 0.10 :         0 elements
+Info    : 0.10 < quality < 0.20 :         0 elements
+Info    : 0.20 < quality < 0.30 :         0 elements
+Info    : 0.30 < quality < 0.40 :         4 elements
+Info    : 0.40 < quality < 0.50 :         9 elements
+Info    : 0.50 < quality < 0.60 :        15 elements
+Info    : 0.60 < quality < 0.70 :        51 elements
+Info    : 0.70 < quality < 0.80 :        71 elements
+Info    : 0.80 < quality < 0.90 :        64 elements
+Info    : 0.90 < quality < 1.00 :        64 elements
+Info    : Done optimizing mesh (Wall 0.000554185s, CPU 0.00055s)
+Info    : 103 nodes 522 elements
+Info    : Writing '/Users/victorvillegassalabarria/Documents/Github/Vugs/Malhas3D/rock_volume1Fracture.msh'...
+Info    : Done writing '/Users/victorvillegassalabarria/Documents/Github/Vugs/Malhas3D/rock_volume1Fracture.msh'
+Info    : Calling 'open -t "/Users/victorvillegassalabarria/Documents/Github/Vugs/Malhas3D/rock_volume1Fracture.geo" &'
+Info    : Reading '/Users/victorvillegassalabarria/Documents/Github/Vugs/Malhas3D/rock_volume1Fracture.geo'...
+Info    : Done reading '/Users/victorvillegassalabarria/Documents/Github/Vugs/Malhas3D/rock_volume1Fracture.geo'
+Info    : Meshing 1D...
+Info    : Meshing curve 1 (Line)
+Info    : Meshing curve 2 (Line)
+Info    : Meshing curve 3 (Line)
+Info    : Meshing curve 4 (Line)
+Info    : Meshing curve 5 (Line)
+Info    : Meshing curve 6 (Line)
+Info    : Meshing curve 7 (Line)
+Info    : Meshing curve 8 (Line)
+Info    : Meshing curve 9 (Line)
+Info    : Meshing curve 10 (Line)
+Info    : Meshing curve 11 (Line)
+Info    : Meshing curve 12 (Line)
+Info    : Meshing curve 100 (Line)
+Info    : Meshing curve 101 (Line)
+Info    : Meshing curve 102 (Line)
+Info    : Meshing curve 103 (Line)
+Info    : Done meshing 1D (Wall 0.0014423s, CPU 0.001405s)
+Info    : Meshing 2D...
+Info    : Meshing surface 14 (Plane, Frontal-Delaunay)
+Info    : Meshing surface 16 (Plane, Frontal-Delaunay)
+Info    : Meshing surface 18 (Plane, Frontal-Delaunay)
+Info    : Meshing surface 20 (Plane, Frontal-Delaunay)
+Info    : Meshing surface 22 (Plane, Frontal-Delaunay)
+Info    : Meshing surface 24 (Plane, Frontal-Delaunay)
+Info    : Meshing surface 105 (Plane, Frontal-Delaunay)
+Info    : Done meshing 2D (Wall 0.003984s, CPU 0.003852s)
+Info    : 99 nodes 244 elements
+Info    : Meshing 3D...
+Info    : 3D Meshing 1 volume with 1 connected component
+Info    : Tetrahedrizing 99 nodes...
+Info    : Done tetrahedrizing 107 nodes (Wall 0.000947038s, CPU 0.000944s)
+Info    : Reconstructing mesh...
+Info    :  - Creating surface mesh
+Info    :  - Identifying boundary edges
+Info    :  - Recovering boundary
+Info    : Done reconstructing mesh (Wall 0.00223906s, CPU 0.002152s)
+Info    : Found volume 31
+Info    : It. 0 - 0 nodes created - worst tet radius 1.34227 (nodes removed 0 0)
+Info    : 3D refinement terminated (103 nodes total):
+Info    :  - 0 Delaunay cavities modified for star shapeness
+Info    :  - 0 nodes could not be inserted
+Info    :  - 282 tetrahedra created in 0.00035451 sec. (795464 tets/s)
+Info    : 0 node relocations
+Info    : Done meshing 3D (Wall 0.00615495s, CPU 0.005785s)
+Info    : Optimizing mesh...
+Info    : Optimizing volume 31
+Info    : Optimization starts (volume = 3.78939e+08) with worst = 0.0532676 / average = 0.768008:
+Info    : 0.00 < quality < 0.10 :         1 elements
+Info    : 0.10 < quality < 0.20 :         2 elements
+Info    : 0.20 < quality < 0.30 :         1 elements
+Info    : 0.30 < quality < 0.40 :         4 elements
+Info    : 0.40 < quality < 0.50 :        10 elements
+Info    : 0.50 < quality < 0.60 :        14 elements
+Info    : 0.60 < quality < 0.70 :        51 elements
+Info    : 0.70 < quality < 0.80 :        72 elements
+Info    : 0.80 < quality < 0.90 :        63 elements
+Info    : 0.90 < quality < 1.00 :        64 elements
+Info    : 4 edge swaps, 0 node relocations (volume = 3.78939e+08): worst = 0.301963 / average = 0.778121 (Wall 0.000243715s, CPU 0.000243s)
+Info    : No ill-shaped tets in the mesh :-)
+Info    : 0.00 < quality < 0.10 :         0 elements
+Info    : 0.10 < quality < 0.20 :         0 elements
+Info    : 0.20 < quality < 0.30 :         0 elements
+Info    : 0.30 < quality < 0.40 :         4 elements
+Info    : 0.40 < quality < 0.50 :         9 elements
+Info    : 0.50 < quality < 0.60 :        15 elements
+Info    : 0.60 < quality < 0.70 :        51 elements
+Info    : 0.70 < quality < 0.80 :        71 elements
+Info    : 0.80 < quality < 0.90 :        64 elements
+Info    : 0.90 < quality < 1.00 :        64 elements
+Info    : Done optimizing mesh (Wall 0.00065481s, CPU 0.00065s)
+Info    : 103 nodes 522 elements
+Info    : Writing '/Users/victorvillegassalabarria/Documents/Github/Vugs/Malhas3D/rock_volume1Fracture'...

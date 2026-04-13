@@ -37,29 +37,25 @@ Line(12) = {4,8};
 // =====================================
 // CARAS DEL CUBO
 // =====================================
-Line Loop(13) = {1,2,3,4};
+Curve Loop(13) = {1,2,3,4};
 Plane Surface(14) = {13};
 
-Line Loop(15) = {5,6,7,8};
+Curve Loop(15) = {5,6,7,8};
 Plane Surface(16) = {15};
 
-Line Loop(17) = {1,10,-5,-9};
+Curve Loop(17) = {1,10,-5,-9};
 Plane Surface(18) = {17};
 
-Line Loop(19) = {2,11,-6,-10};
+Curve Loop(19) = {2,11,-6,-10};
 Plane Surface(20) = {19};
 
-Line Loop(21) = {3,12,-7,-11};
+Curve Loop(21) = {3,12,-7,-11};
 Plane Surface(22) = {21};
 
-Line Loop(23) = {4,9,-8,-12};
+Curve Loop(23) = {4,9,-8,-12};
 Plane Surface(24) = {23};
 
-// =====================================
-// VOLUMEN
-// =====================================
-Surface Loop(30) = {14,16,18,20,22,24};
-Volume(31) = {30};
+
 
 // =====================================
 // FRACTURA (PLANO INTERNO)
@@ -77,25 +73,28 @@ Line(102) = {102,103};
 Line(103) = {103,100};
 
 // Superficie de la fractura
-Line Loop(104) = {100,101,102,103};
+Curve Loop(104) = {100,101,102,103};
 Plane Surface(105) = {104};
 
-// =====================================
-// EMBEBER FRACTURA EN EL VOLUMEN
-// =====================================
-Surface{105} In Volume{31};
 
+//Surface{105} In Volume{31};
+// =====================================
+// VOLUMEN
+// =====================================
+//Surface Loop(30) = {105,-14,-16,-18,-20,-22,-24};
+Surface Loop(30) = {105,-14,-16,-18,-20,-22,-24};
+Volume(31) = {30};
 // =====================================
 // PHYSICAL GROUPS
 // =====================================
 Physical Volume("CuboExterno", 1) = {31};
 
-Physical Surface("Fracture", 2) = {105};
+Physical Surface("Fracture", 5) = {105};
 
 // Boundaries (ajusta según tu solver)
-Physical Surface("inlet", 3) = {20};
-Physical Surface("outlet", 4) = {24};
-Physical Surface("noflux", 5) = {14,16,18,22};
+Physical Surface("inlet", 2) = {20};
+Physical Surface("outlet", 3) = {24};
+Physical Surface("Top", 4) = {14,16,18,22};
 
 // =====================================
 //Mesh 3;

@@ -10,13 +10,13 @@
   "Resolution": 1,
   "DomainData" : [
     {
-      "Name" : "Darcy",
+      "Name" : "CuboExterno",
       "matId" : 1,
       "Permeability" : 0.01
     },
     {
-      "Name" : "Vugs",
-      "matId" : 6,
+      "Name" : "Fracture",
+      "matId" : 5,
       "Permeability" : 1.0e6
     }
   ],

@@ -2,11 +2,36 @@
 #include "pzlog.h"
 
 void Hdiv_MixedCT(){
-
+ 
     //ReadJson inputData("/home/marina/programming/Stokes-Darcy-Research/VUGS/Inputs/FewVugs.json");
     //ReadJson inputData("/Users/victorvillegassalabarria/Documents/Github/Vugs/Inputs/FewVugs_V.json");//WORKS OK
-    //ReadJson inputData("/Users/victorvillegassalabarria/Documents/Github/Vugs/Inputs/SingleVug3D.json");// Breaking on side oriented(flux_cmesh), after comment it. it works well
-    ReadJson inputData("/Users/victorvillegassalabarria/Documents/Github/Vugs/Inputs/FewVugsFracts.json");// Testing both vugs&fract in a same mesh, for the first test it breaks on the TPZAnalyisis(Maybe I should make corrections at the .json file)
+    //ReadJson inputData("/Users/victorvillegassalabarria/Documents/Github/Vugs/Inputs/SingleVug3D.json");// Breaking on side Sideoriented(flux_cmesh), after comment it. it works well
+    //ReadJson inputData("/Users/victorvillegassalabarria/Documents/Github/Vugs/Inputs/FewVugsFracts.json");// Testing both vugs&fract in a same mesh, for the first test it breaks on the TPZAnalyisis(Maybe I should make corrections at the .json file)
+    //
+    //
+    //Hdiv test
+    //
+    //VUG - High Permebility
+    //ReadJson inputData("/Users/victorvillegassalabarria/Documents/Github/Vugs/Inputs/SingleVug3D_HdivHP.json");//RUN
+    //VUG - Const Pressure
+    //ReadJson inputData("/Users/victorvillegassalabarria/Documents/Github/Vugs/Inputs/SingleVug3D_Hdiv.json");//RUN
+
+    //FRATURA
+    //ReadJson inputData("/Users/victorvillegassalabarria/Documents/Github/Vugs/Inputs/FewVugsFracts.json");//
+    //
+    //
+    //H1 test
+    //
+    //VUG - Const Pressure
+    //ReadJson inputData("/Users/victorvillegassalabarria/Documents/Github/Vugs/Inputs/SingleVug3D_H1.json");//RUN
+    //VUG - High Permeability
+    //ReadJson inputData("/Users/victorvillegassalabarria/Documents/Github/Vugs/Inputs/SingleVug3D_H1HP.json");//RUN
+
+    //
+    //FRATURA
+    //ReadJson inputData("/Users/victorvillegassalabarria/Documents/Github/Vugs/Inputs/Fractures.json");//
+    //ReadJson inputData("/Users/victorvillegassalabarria/Documents/Github/Vugs/Inputs/SingleFracture.json");//
+    ReadJson inputData("/Users/victorvillegassalabarria/Documents/Github/Vugs/Inputs/SingleFrature3D_H1.json");//
 
 
     TPZGeoMesh *gmesh = new TPZGeoMesh;
@@ -35,9 +60,10 @@ void Hdiv_MixedCT(){
 
     gmesh = generateGMeshWithPhysTagVec(inputData, filename, meshName);
 
-    MeshWithSegment(inputData, gmesh);
+    //MeshWithSegment(inputData, gmesh);
 
     PrintGeoMesh(gmesh);
+    
 
     std::set<int> elsId, bcId;
     GetAtomicIds(gmesh, elsId, bcId);

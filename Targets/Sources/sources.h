@@ -43,9 +43,9 @@ using json = nlohmann::json;
 
 enum MatID{
     EMatId = 1,
-    EVugId = 600, 
-    EVugBcId = 100, 
-    EFracId = 700, 
+    EVugId = 600,
+    EVugBcId = 100,
+    EFracId = 700,
     EFracBcId = 200,
     EbcInletId = 2,
     EbcOutletId = 3,
@@ -63,8 +63,8 @@ struct DomData {
 struct BcData {
     std::string name = "none"; // name of the bc
     int matId = 0;
-    int type = 0; 
-    TPZManVector<double, 3>  value = {0.0, 0.0, 0.0}; 
+    int type = 0;
+    TPZManVector<double, 3>  value = {0.0, 0.0, 0.0};
 };
 
 extern std::set<int> vugBcIds;
@@ -101,6 +101,8 @@ public:
 
     std::vector<BcData> BCInput();
 
+    std::vector<BcData> FracBCInput();
+
 
 private:
 
@@ -109,12 +111,6 @@ private:
     std::string fMeshName;
     
     std::string fMeshDirectory;
-
-    // std::map<std::string, int> fDomainData;
-
-    // std::map<std::string, int> fVugData;
-
-    // std::map<std::string, int> fFracData;
 
     std::vector<DomData> fDomainDataVec;
     
@@ -138,6 +134,8 @@ private:
 
     std::vector<BcData> fBcDataVec;
 
+    std::vector<BcData> fFracBcVec;
+
 };
 
 TPZGeoMesh* generateGMeshWithPhysTagVec(ReadJson inputData, std::string filename, std::string meshName);
@@ -160,7 +158,9 @@ void MeshWithSegmentPhil(ReadJson inputData, TPZGeoMesh *gmesh);
 
 void MeshWithSegment(ReadJson inputData, TPZGeoMesh *gmesh);
 
-void SideOrientation(TPZCompMesh *cmesh);
+void SideOrientation(TPZCompMesh *cmesh, ReadJson inputData);
+
+void SideOrientation1D(TPZCompMesh *cmesh);
 
 void DuplicateConnectFracture(TPZGeoMesh *gmesh, TPZCompMesh *cmesh);
 
@@ -168,8 +168,7 @@ void CondenseEndFrac(TPZCompMesh* cmesh);
 
 void CreateInterfaceGeoEls(TPZGeoMesh *gmesh);
 
-//void InsertInterfaceEls(TPZMultiphysicsCompMesh *cmesh, TPZGeoMesh *gmesh, std::set<int> &vugIds,std::set<int> &vugBcIds);
-void InsertInterfaceEls(TPZMultiphysicsCompMesh *cmesh, TPZGeoMesh *gmesh);
+void InsertInterfaceEls(TPZMultiphysicsCompMesh *cmesh, TPZGeoMesh *gmesh, ReadJson inputData);
 
 void Solve(TPZLinearAnalysis* an, TPZCompMesh* cmesh, ReadJson inputData);
 

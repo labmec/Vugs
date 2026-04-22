@@ -2,7 +2,7 @@
   "MeshName" : "rock_volume1Fracture",
   "MeshDirectory" : "/Users/victorvillegassalabarria/Documents/Github/Vugs/Malhas3D/",
   "Simulation" : {
-    "ApproximationType" : 0, //H1: 0, Hdiv: 1
+    "ApproximationType" : 1, //H1: 0, Hdiv: 1
     "ProblemType" : 1 //High Permeability: 0, Constant Pressure: 1
   },
   "PressurepOrder": 1,
@@ -12,12 +12,14 @@
     {
       "Name" : "CuboExterno",
       "matId" : 1,
-      "Permeability" : 0.01
+      "Permeability" : 0.01,
+      "dim" : 3
     },
     {
       "Name" : "Fracture",
       "matId" : 5,
-      "Permeability" : 1.0e6
+      "Permeability" : 1.0e6,
+      "dim" : 2
     }
   ],
   "BCs": [
@@ -44,6 +46,14 @@
       "matId" : 3,
       "Type" : 0, 
       "Value" : 10
+    }
+  ],
+  "FracBCs" : [
+    {
+      "Name" : "FracEnds",
+      "matId" : 10,
+      "Type" : 1,
+      "Value" : 0
     }
   ]
 }

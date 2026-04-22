@@ -95,6 +95,6 @@ Physical Surface("Fracture", 5) = {105};
 Physical Surface("inlet", 2) = {20};
 Physical Surface("outlet", 3) = {24};
 Physical Surface("Top", 4) = {14,16,18,22};
-
+Physical Curve("FracEnds",10) = {100};
 // =====================================
 //Mesh 3;

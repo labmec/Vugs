@@ -419,6 +419,4 @@ void GetAtomicIds(TPZGeoMesh *geomesh, std::set<int> &volId, std::set<int> &bcId
             bcId.insert(matId);
         }
     }
-    
-    
 }

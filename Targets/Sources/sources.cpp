@@ -1,6 +1,5 @@
 #ifndef SOURCES_H
 #define SOURCES_H
-
 #include "sources.h"
 
 std::set<int> vugBcIds;
@@ -25,17 +24,19 @@ TPZGeoMesh* generateGMeshWithPhysTagVec(ReadJson inputData, std::string filename
 
     for (auto bc: bcData){
         int elDim = Dim-1;
-        if (bc.matId == 10) elDim = 0;
+        if (bc.matId == 10) DebugStop();//elDim = 0;
+        std::cout<<"mat "<<bc.name <<std::endl;
         dim_name_and_physical_tag[elDim][bc.name] = bc.matId;
     }
 
     for (auto bc: FracbcData){
-        int elDim = 0;
+        //int elDim = 0;
+        int elDim = Dim-2;
         dim_name_and_physical_tag[elDim][bc.name] = bc.matId;
     }
 
     for (auto info: domainData){
-        int elDim = Dim;
+        int elDim = info["dim"];
         //Modificar para rodar em 3D
 //        if (info.matId == 5) elDim = 1;
         if (info.matId == 5) elDim = Dim-1;
@@ -49,103 +50,103 @@ TPZGeoMesh* generateGMeshWithPhysTagVec(ReadJson inputData, std::string filename
     return gmeshFine;
 }
 
-
-void MeshWithSegmentPhil(ReadJson inputData, TPZGeoMesh *gmesh){
-    int ncreated = 0;
-    int nels = gmesh->NElements();
-    int matid_vug = 6;
-    int meshdim = gmesh->Dimension();
-    int EfractureId = 5; //CHANGE IT
-
-    int VugBcMatId = EFracBcId;
-
-    TPZVec<int64_t> verificador(nels,-1);
-  
-    for(int el = 0; el < nels; el++){
-        TPZGeoEl *gel = gmesh->Element(el);
-        if(!gel) continue;
-        int matId = gel->MaterialId();
-
-        if(matId != matid_vug && matId != EfractureId) continue;
-
-        if(verificador[el] != -1) continue;
-
-        TPZStack<int64_t> tocheck;
-        tocheck.Push(el);
-
-        while(tocheck.size()){
-
-            int64_t elcheck = tocheck.Pop();
-
-            if(verificador[elcheck] != -1) continue;
-
-            TPZGeoEl *gelcheck = gmesh->Element(elcheck);
-            int gelDim = gelcheck->Dimension();
-            verificador[elcheck] = VugBcMatId;
-            gelcheck->SetMaterialId(VugBcMatId+500);
-            //vugBcIds.insert(mat);
-            vugIds.insert(VugBcMatId+500);
-            vugBcIds.insert(VugBcMatId);
-
-            int lastside   = gelcheck->NSides();
-            if (gelDim == 2) lastside--;
-
-            int ncorners = gelcheck->NCornerNodes();
-            int firstside = gelcheck->FirstSide(1);
-
-            for(int iside = firstside; iside < lastside; iside++){
-                TPZGeoElSide gelside(gelcheck, iside);
-                bool hasDarcyNeigh = gelside.HasNeighbour(EMatId);
-                bool hasVugBound   = gelside.HasNeighbour(EFracBcId);
-                if (gelDim == 1 && !hasDarcyNeigh) DebugStop();
-                if(gelDim == 2 && hasDarcyNeigh && !hasVugBound){
-                    gelside.Element()->CreateBCGeoEl(iside, VugBcMatId);
-                    //vugBcIds.insert(mat);
-                    std::cout<<"Vug bc index: "<<vugBcIds.size()<<std::endl;
-                    hasVugBound = true;
-                }
-                if(gelDim == 1 && hasVugBound) DebugStop();
-                if(gelDim == 1){
-                    TPZGeoElSide neighbour = gelside.Neighbour();
-                    while(neighbour != gelside){
-                        int neighmatId = neighbour.Element()->MaterialId();
-                        if(neighmatId == EMatId){
-                            TPZGeoElBC gbc(neighbour,VugBcMatId);
-                            std::cout << "Creating neighbor for fracture " << gelcheck->Index() << "\n";
-                        }
-                        neighbour = neighbour.Neighbour();
-                    }
-                }
-                TPZGeoElSide neighbour = gelside.Neighbour();
-                TPZGeoEl *neighgel = neighbour.Element();
-
-                if(gelDim == 2 && !hasDarcyNeigh){
-                    int64_t neighindex = neighgel->Index();
-                    if(verificador[neighindex] == -1)
-                        tocheck.Push(neighindex);
-                }
-                if(gelDim == 1){
-                    for(int side = 0; side < 2; side++){
-                        TPZGeoElSide gelside(gelcheck, side);
-                        TPZGeoElSide neighFrac = gelside.HasNeighbour(EfractureId);
-                        if(neighFrac){
-                            TPZGeoEl* gelFrac = neighFrac.Element();
-                            int elIndex = gelFrac->Index();
-                            if(verificador[elIndex] == -1){
-                                tocheck.Push(elIndex);
-                            }
-                        }
-                    }
-                }
-            }
-        }
-      // incrementamos o valor de mat, para o seguinte vug.
-        VugBcMatId++;
-        ncreated++;
-    }
-    std::cout<<"Vug bc index final: "<<vugBcIds.size()<<std::endl;
-
-}
+//
+//void MeshWithSegmentPhil(ReadJson inputData, TPZGeoMesh *gmesh){
+//    int ncreated = 0;
+//    int nels = gmesh->NElements();
+//    int matid_vug = 6;
+//    int meshdim = gmesh->Dimension();
+//    int EfractureId = 5; //CHANGE IT
+//
+//    int EFracBcIdd = EFracBcId;
+//
+//    TPZVec<int64_t> verificador(nels,-1);
+//
+//    for(int el = 0; el < nels; el++){
+//        TPZGeoEl *gel = gmesh->Element(el);
+//        if(!gel) continue;
+//        int matId = gel->MaterialId();
+//
+//        if(matId != matid_vug && matId != EfractureId) continue;
+//
+//        if(verificador[el] != -1) continue;
+//
+//        TPZStack<int64_t> tocheck;
+//        tocheck.Push(el);
+//
+//        while(tocheck.size()){
+//
+//            int64_t elcheck = tocheck.Pop();
+//
+//            if(verificador[elcheck] != -1) continue;
+//
+//            TPZGeoEl *gelcheck = gmesh->Element(elcheck);
+//            int gelDim = gelcheck->Dimension();
+//            verificador[elcheck] = VugBcMatId;
+//            gelcheck->SetMaterialId(VugBcMatId+500);
+//            //vugBcIds.insert(mat);
+//            vugIds.insert(VugBcMatId+500);
+//            vugBcIds.insert(VugBcMatId);
+//
+//            int lastside   = gelcheck->NSides();
+//            if (gelDim == 2) lastside--;
+//
+//            int ncorners = gelcheck->NCornerNodes();
+//            int firstside = gelcheck->FirstSide(1);
+//
+//            for(int iside = firstside; iside < lastside; iside++){
+//                TPZGeoElSide gelside(gelcheck, iside);
+//                bool hasDarcyNeigh = gelside.HasNeighbour(EMatId);
+//                bool hasVugBound   = gelside.HasNeighbour(EFracBcId);
+//                if (gelDim == 1 && !hasDarcyNeigh) DebugStop();
+//                if(gelDim == 2 && hasDarcyNeigh && !hasVugBound){
+//                    gelside.Element()->CreateBCGeoEl(iside, VugBcMatId);
+//                    //vugBcIds.insert(mat);
+//                    std::cout<<"Vug bc index: "<<vugBcIds.size()<<std::endl;
+//                    hasVugBound = true;
+//                }
+//                if(gelDim == 1 && hasVugBound) DebugStop();
+//                if(gelDim == 1){
+//                    TPZGeoElSide neighbour = gelside.Neighbour();
+//                    while(neighbour != gelside){
+//                        int neighmatId = neighbour.Element()->MaterialId();
+//                        if(neighmatId == EMatId){
+//                            TPZGeoElBC gbc(neighbour,VugBcMatId);
+//                            std::cout << "Creating neighbor for fracture " << gelcheck->Index() << "\n";
+//                        }
+//                        neighbour = neighbour.Neighbour();
+//                    }
+//                }
+//                TPZGeoElSide neighbour = gelside.Neighbour();
+//                TPZGeoEl *neighgel = neighbour.Element();
+//
+//                if(gelDim == 2 && !hasDarcyNeigh){
+//                    int64_t neighindex = neighgel->Index();
+//                    if(verificador[neighindex] == -1)
+//                        tocheck.Push(neighindex);
+//                }
+//                if(gelDim == 1){
+//                    for(int side = 0; side < 2; side++){
+//                        TPZGeoElSide gelside(gelcheck, side);
+//                        TPZGeoElSide neighFrac = gelside.HasNeighbour(EfractureId);
+//                        if(neighFrac){
+//                            TPZGeoEl* gelFrac = neighFrac.Element();
+//                            int elIndex = gelFrac->Index();
+//                            if(verificador[elIndex] == -1){
+//                                tocheck.Push(elIndex);
+//                            }
+//                        }
+//                    }
+//                }
+//            }
+//        }
+//      // incrementamos o valor de mat, para o seguinte vug.
+//        VugBcMatId++;
+//        ncreated++;
+//    }
+//    std::cout<<"Vug bc index final: "<<vugBcIds.size()<<std::endl;
+//
+//}
 
 
 //TODO Arrumar para fazer Vugs e Frac Juntos
@@ -375,6 +376,12 @@ void GetAtomicIds(TPZGeoMesh *geomesh, std::set<int> &elsId, std::set<int> &bcId
 }
 
 
+/// <#Description#>
+/// @param gmesh <#gmesh description#>
+/// @param elsId <#elsId description#>
+/// @param bcId <#bcId description#>
+/// @param orderp <#orderp description#>
+/// @param inputData <#inputData description#>
 TPZCompMesh *CreateFluxMesh(TPZGeoMesh *gmesh, std::set<int> &elsId, std::set<int> &bcId, int &orderp, ReadJson inputData){
     int typeMesh = 0; //Malha de fluxo
     TPZCompMesh *cmesh = new TPZCompMesh(gmesh);
@@ -386,6 +393,7 @@ TPZCompMesh *CreateFluxMesh(TPZGeoMesh *gmesh, std::set<int> &elsId, std::set<in
     int pOrder=1;
     cmesh->SetDefaultOrder(pOrder);
     int meshdim = gmesh->Dimension();
+    int fractdim=meshdim-1;
     if (orderp==0){
         cmesh->ApproxSpace().SetHDivFamily(HDivFamily::EHDivConstant);
     }
@@ -415,11 +423,12 @@ TPZCompMesh *CreateFluxMesh(TPZGeoMesh *gmesh, std::set<int> &elsId, std::set<in
     if(problemType == 0 && !fracIds.empty()){
         cmesh->Reference()->ResetReference();
         std::vector<BcData> bcData = inputData.FracBCInput();
-        cmesh->SetDimModel(1);
-        cmesh->SetDefaultOrder(1);
+        if(bcData.size() != 1) DebugStop();
+        cmesh->SetDimModel(fractdim);
+        cmesh->SetDefaultOrder(fractdim);
 
         for(auto Id: fracIds) {
-            TPZNullMaterial <STATE> *matFrac = new TPZNullMaterial(Id, 1);
+            TPZNullMaterial <STATE> *matFrac = new TPZNullMaterial(Id, fractdim);
             cmesh->InsertMaterialObject(matFrac);
         }
 
@@ -427,14 +436,16 @@ TPZCompMesh *CreateFluxMesh(TPZGeoMesh *gmesh, std::set<int> &elsId, std::set<in
 
         TPZFMatrix<STATE> val1(1,1,0.0);
         TPZVec<STATE> val2(1,0.0);
-        TPZNullMaterial <STATE> *matEndFrac = new TPZNullMaterial(bcData[0].matId, 1);
-        TPZBndCond *endFrac = matEndFrac->CreateBC(matEndFrac, bcData[0].matId, bcData[0].type, val1, val2);
+        if(bcData[0].matId){
+//        if(bcData[0]){
+        TPZNullMaterial <STATE> *matEndFrac = new TPZNullMaterial(bcData[0].matId, fractdim-1);
         cmesh->InsertMaterialObject(matEndFrac);
-        cmesh->ApproxSpace().SetAllCreateFunctionsHDiv(1);
+        cmesh->ApproxSpace().SetAllCreateFunctionsHDiv(fractdim);
 
         newIds.insert(bcData[0].matId);
         
         cmesh->AutoBuild(newIds);
+        }
         SideOrientation1D(cmesh);
     }
 
@@ -476,9 +487,7 @@ TPZCompMesh *CreatePressureMesh(TPZGeoMesh *gmesh, std::set<int> &elsId, std::se
 
     //     cmesh->ApproxSpace().SetAllCreateFunctionsContinuous();
     //     cmesh->ApproxSpace().CreateDisconnectedElements(true);
-    // }
-    
-    
+    //
     cmesh->AutoBuild();
 
     if(1 > 0){
@@ -554,6 +563,7 @@ TPZMultiphysicsCompMesh *CreateMultiMesh(TPZGeoMesh* gmesh, TPZVec<TPZCompMesh *
     }
 
     val2[0] = 0;
+    //val2[0] = 60;
     for(auto bcId: fracBcIds) { // Frac boundary elements
         TPZBndCond *faceFrac = matDarcy->CreateBC(matDarcy, bcId, 0, val1, val2);
         cmesh->InsertMaterialObject(faceFrac);
@@ -805,8 +815,12 @@ void SideOrientation(TPZCompMesh *cmesh, ReadJson inputData){ //CheckSideOrienta
         
         int nSides = gel->NSides();
         int nNodeSides = gel->NCornerNodes();
+        //int firstside=gel->Nsides()-gel
+        //for(int side = nNodeSides; side < nSides-1; side++){
+        int dim = gel->Dimension();
 
-        for(int side = nNodeSides; side < nSides-1; side++){
+        for(int side = 0; side < gel->NSides(); side++){
+            if(gel->SideDimension(side) != dim-1) continue;
             TPZGeoElSide gelSide(gel, side);
             TPZGeoElSide neigh = gelSide.HasNeighbour(vugBcIds);
             if(!neigh) neigh = gelSide.HasNeighbour(fracBcIds);
@@ -905,7 +919,9 @@ void CondenseEndFrac(TPZCompMesh* cmesh){
 }
 
 void SideOrientation1D(TPZCompMesh *cmesh){
+    // cmesh is an hdiv type mesh
     int64_t nels = cmesh->NElements();
+    int dim = cmesh->Dimension();
 
     for(int64_t el = 0; el < nels; el++){
 
@@ -915,23 +931,12 @@ void SideOrientation1D(TPZCompMesh *cmesh){
         
         if(fracIds.find(matid) == fracIds.end()) continue;
         
+        if(gel->Dimension() != dim-1) DebugStop();
         
         //
         int nnodes = gel->NNodes();
-        int firstside=0;
-        int lastside=0;
-        if(nnodes==2){
-            lastside=2;
-        }
-        else if(nnodes==3){
-            firstside=3;
-            lastside=6;
-        }
-        else if(nnodes==4){
-            firstside=4;
-            lastside=8;
-        }
-        //
+        int firstside= gel->FirstSide(dim-1);
+        int lastside= gel->FirstSide(dim);
         //
 
         for(int side = firstside; side < lastside; side++){
@@ -977,10 +982,11 @@ void Solve(TPZLinearAnalysis* an, TPZCompMesh* cmesh, ReadJson inputData){
 
 void PostProcess(ReadJson inputData){
     return;
+    
 }
 
 
-ReadJson::ReadJson(std::string fileName){
+    ReadJson::ReadJson(std::string fileName){
     
     std::ifstream filejson(fileName);
 
@@ -1044,13 +1050,11 @@ ReadJson::ReadJson(std::string fileName){
 std::string ReadJson::MeshName(){
     return fMeshName;
 }
-
 std::string ReadJson::MeshFile(){
 
     std::string meshPath = fMeshDirectory + fMeshName + ".msh";
     return meshPath;
 }
-
 std::vector<DomData> ReadJson::DomainData(){
     return fDomainDataVec;
 }

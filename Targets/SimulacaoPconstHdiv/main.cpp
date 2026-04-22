@@ -29,9 +29,9 @@ void Hdiv_MixedCT(){
 
     //
     //FRATURA
-    //ReadJson inputData("/Users/victorvillegassalabarria/Documents/Github/Vugs/Inputs/Fractures.json");//
+    ReadJson inputData("/Users/victorvillegassalabarria/Documents/Github/Vugs/Inputs/Fractures.json");//
     //ReadJson inputData("/Users/victorvillegassalabarria/Documents/Github/Vugs/Inputs/SingleFracture.json");//
-    ReadJson inputData("/Users/victorvillegassalabarria/Documents/Github/Vugs/Inputs/SingleFrature3D_H1.json");//
+    //ReadJson inputData("/Users/victorvillegassalabarria/Documents/Github/Vugs/Inputs/SingleFrature3D_H1.json");//
 
 
     TPZGeoMesh *gmesh = new TPZGeoMesh;
@@ -60,7 +60,7 @@ void Hdiv_MixedCT(){
 
     gmesh = generateGMeshWithPhysTagVec(inputData, filename, meshName);
 
-    //MeshWithSegment(inputData, gmesh);
+    MeshWithSegment(inputData, gmesh);
 
     PrintGeoMesh(gmesh);
     
@@ -106,11 +106,27 @@ void Hdiv_MixedCT(){
             TPZManVector<std::string, 2> fields = {"Flux", "Pressure", "GradFluxX"};
             auto vtk = TPZVTKGenerator(cmesh_mult, fields, plotfile, vtkRes);
             vtk.Do();
+            
         }
-    
+//        std::set<int> matToProc;
+//        matToProc.insert(700);
+//        std::string file_reservoir2("Fract3D_Hdiv.vtk");
+//
+//        //Analisys->DefineGraphMesh(3,matToProc,scalnames, file_reservoir2, vtkRes);
+//        constexpr int vtkRes{0};
+//        //Definición de variables escalares y vectoriales a posprocesar
+//        TPZStack<std::string,10> scalnames, vecnames;
+//        vecnames.Push("Flux");
+//        scalnames.Push("Pressure");
+//        auto vtk2 = TPZVTKGenerator(cmesh_mult, matToProc,scalnames,file_reservoir2, vtkRes);
+//        vtk2.Do();
         PrintCompMesh(cmesh_mult);
         PrintCompMesh(Flux_cmesh);
         PrintCompMesh(Pressure_cmesh);
+
+
+        // --- Clean up ---
+        
         delete cmesh_mult;
     }
     else{
@@ -133,7 +149,8 @@ void Hdiv_MixedCT(){
         //Configuración del posprocesamiento
         int ref = 0; 
         std::string plotfile = meshName + approxName + ".vtk";
-  
+
+        
         Analisys->DefineGraphMesh(problemDim, scalnames, vecnames, plotfile);
         
         Analisys->PostProcess(ref, problemDim);

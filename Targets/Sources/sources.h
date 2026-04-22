@@ -3,9 +3,7 @@
 #include <filesystem>
 #include <json.hpp>
 #include <math.h>
-
 using json = nlohmann::json;
-
 #include "pzcmesh.h"
 #include "TPZElementMatrixT.h"
 #include "pzmanvector.h"
@@ -41,7 +39,7 @@ using json = nlohmann::json;
 #include "pzintel.h"
 
 
-
+namespace FracVugData {
 enum MatID{
     EMatId = 1,
     EVugId = 600,
@@ -68,11 +66,10 @@ struct BcData {
     int type = 0;
     TPZManVector<double, 3>  value = {0.0, 0.0, 0.0};
 };
-
+};
 class ReadJson
 {
 public:
-
     //Constructor
     //@fileName path to the input .json file
     //@This constructor reads and parses the json file,
@@ -80,14 +77,15 @@ public:
     ReadJson(std::string fileName);
     //Methods
     //
-
+    //
     //@Returns the name of the mesh (used for identification/output)
     std::string MeshName();
     //@Returns the directory or full path to the mesh file
     std::string MeshFile();
     //@Returns a const reference to the vector containing domain data
-    //@Each DomData entry represents a material region in the domain
-    const std::vector<DomData> &DomainData();
+    //@Each FracVugData::FracVugData::BcData::FracVugData::BcData::DomData entry represents a material region in the domain
+    //const std::vector<FracVugData::FracVugData::BcData::FracVugData::BcData::DomData> &DomainData();
+    std::vector<FracVugData::DomData> DomainData();
     //@Returns the approximation type used in the simulation
     //@(e.g., mixed, continuous, etc.)
     int approxType();
@@ -102,12 +100,12 @@ public:
 
     int resolution();
     //@Returns a vector with boundary condition data
-    //@Each BcData represents one boundary condition entry
+    //@Each FracVugData::BcData represents one boundary condition entry
     //
     
-    std::vector<BcData> BCInput();
+    std::vector<FracVugData::BcData> BCInput();
     //@Returns boundary condition data specifically for fractures
-    std::vector<BcData> FracBCInput();
+    std::vector<FracVugData::BcData> FracBCInput();
     //
     //    MATERIAL SETS
 
@@ -138,7 +136,7 @@ private:
         std::string fMeshDirectory;
 
         //@Vector storing domain/material data
-        std::vector<DomData> fDomainDataVec;
+        std::vector<FracVugData::DomData> fDomainDataVec;
         
         //@Approximation type identifier
         int fApproxType;
@@ -168,10 +166,10 @@ private:
         double fVisc;
 
         //@Boundary condition data (standard)
-        std::vector<BcData> fBcDataVec;
+        std::vector<FracVugData::BcData> fBcDataVec;
 
         //@Boundary condition data for fractures
-        std::vector<BcData> fFracBcVec;
+        std::vector<FracVugData::BcData> fFracBcVec;
     
 };
 

@@ -23,7 +23,7 @@ void Hdiv_MixedCT(){
     //H1 test
     //
     //VUG - Const Pressure
-    //ReadJson inputData("/Users/victorvillegassalabarria/Documents/Github/Vugs/Inputs/SingleVug3D_H1.json");//RUN
+    ReadJson inputData("/Users/victorvillegassalabarria/Documents/Github/Vugs/Inputs/NewInputs/SingleVug3D.json");//RUN
     //VUG - High Permeability
     //ReadJson inputData("/Users/victorvillegassalabarria/Documents/Github/Vugs/Inputs/SingleVug3D_H1HP.json");//RUN
 
@@ -31,8 +31,8 @@ void Hdiv_MixedCT(){
     //FRATURA
     //ReadJson inputData("/Users/victorvillegassalabarria/Documents/Github/Vugs/Inputs/Fractures.json");//
     //ReadJson inputData("/Users/victorvillegassalabarria/Documents/Github/Vugs/Inputs/SingleFracture.json");//
-    ReadJson inputData("/Users/victorvillegassalabarria/Documents/Github/Vugs/Inputs/SingleFrature3D_H1.json");//
-
+    //ReadJson inputData("/Users/victorvillegassalabarria/Documents/Github/Vugs/Inputs/2Dsem.json");
+    //ReadJson inputData("/Users/victorvillegassalabarria/Documents/Github/Vugs/Inputs/FewVugs_V.json");//
 
     TPZGeoMesh *gmesh = new TPZGeoMesh;
 
@@ -60,7 +60,7 @@ void Hdiv_MixedCT(){
 
     gmesh = generateGMeshWithPhysTagVec(inputData, filename, meshName);
 
-    //MeshWithSegment(inputData, gmesh);
+    MeshWithSegment(inputData, gmesh);
 
     PrintGeoMesh(gmesh);
     

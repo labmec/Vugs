@@ -799,14 +799,15 @@ void SideOrientation(TPZCompMesh *cmesh, ReadJson inputData){ //CheckSideOrienta
     for(int el = 0; el < cmesh->NElements(); el++){
         TPZCompEl *cel = cmesh->Element(el);
         TPZGeoEl *gel = cel->Reference();
-        
         //if(gel->MaterialId() < EVugBcId || gel->MaterialId() >= EVugId) continue;
         if(gel->MaterialId() != EMatId) continue;
-        
         int nSides = gel->NSides();
         int nNodeSides = gel->NCornerNodes();
+        int nsides   = gel->NSides();
+        int ncorners = gel->NCornerNodes();
+        int firstside = nsides - ncorners - 1;
 
-        for(int side = nNodeSides; side < nSides-1; side++){
+        for(int side = firstside; side < nsides; side++){
             TPZGeoElSide gelSide(gel, side);
             TPZGeoElSide neigh = gelSide.HasNeighbour(vugBcIds);
             if(!neigh) neigh = gelSide.HasNeighbour(fracBcIds);

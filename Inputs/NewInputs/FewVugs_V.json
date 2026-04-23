@@ -1,6 +1,6 @@
 {
-  "MeshName" : "SingleVug",
-  "MeshDirectory" : "/Users/victorvillegassalabarria/Documents/Github/Vugs/Meshes/",
+  "MeshName" : "FewVugsMesh",
+  "MeshDirectory" : "/Users/victorvillegassalabarria/Documents/Github/Vugs/NewMeshes/",
   "Simulation" : {
     "ApproximationType" : 0, //H1: 0, Hdiv: 1
     "ProblemType" : 1 //High Permeability: 0, Constant Pressure: 1
@@ -17,27 +17,27 @@
     {
       "Name" : "Vugs",
       "matId" : 6,
-      "Permeability" : 1.0e6
+      "Permeability" : 1e3
     }
   ],
   "BCs": [
     {
-      "Name" : "noflux",
+      "Name" : "UpFace",
       "matId" : 4,
-      "Type" : 1, //Dirichlet: 0, Neumann: 1
-      "Value" : 0
+      "Type" : 0, //Dirichlet: 0, Neumann: 1
+      "Value" : 10
     },
-    // {
-    //   "Name" : "bottom",
-    //   "matId" : 4,
-    //   "Type" : 1, 
-    //   "Value" : 0
-    // },
+     {
+       "Name" : "Downface",
+       "matId" : 8,
+       "Type" : 0,
+       "Value" : 10
+     },
     {
       "Name" : "inlet",
       "matId" : 2,
       "Type" : 0, 
-      "Value" : 100
+      "Value" : 10
     },
     {
       "Name" : "outlet",

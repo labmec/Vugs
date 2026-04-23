@@ -263,7 +263,7 @@ Surface Loop(10025) = {10014, 10016, 10018, 10020, 10022, 10024, 1, 2, 3, 4, 5, 
 Physical Surface("inlet",2)={10024};
 Physical Surface("outlet",3)={10020};
 Physical Surface("Top",4)={10014,10018};
-//Physical Surface("Bottom",5)={10022,10016};
+Physical Surface("Bottom",8)={10022,10016};
 
 Volume(1) = {10025};
 

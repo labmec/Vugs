@@ -1,5 +1,5 @@
 {
-  "MeshName" : "SeveralVugs",
+  "MeshName" : "SeveralVugs2",
   "MeshDirectory" : "/home/marina/programming/Stokes-Darcy-Research/VUGS/Meshes/", 
   "Simulation" : {
     "ApproximationType" : 0, //H1: 0, Hdiv: 1
@@ -10,7 +10,7 @@
   "Resolution": 1,
   "DomainData" : [
     {
-      "Name" : "k11",
+      "Name" : "Darcy",
       "matId" : 1,
       "Permeability" : 0.01
     },

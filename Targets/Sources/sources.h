@@ -21,6 +21,7 @@ using json = nlohmann::json;
 #include "TPZMaterial.h"
 #include "DarcyFlow/TPZDarcyFlow.h"
 #include "DarcyFlow/TPZMixedDarcyFlow.h"
+#include "TVFDarcyMaterial.h"
 #include "TPZSkylineNSymStructMatrix.h"
 #include "TPZNullMaterialCS.h"
 #include "TPZNullMaterial.h"
@@ -170,7 +171,13 @@ void CreateInterfaceGeoEls(TPZGeoMesh *gmesh);
 
 void InsertInterfaceEls(TPZMultiphysicsCompMesh *cmesh, TPZGeoMesh *gmesh, ReadJson inputData);
 
-void Solve(TPZLinearAnalysis* an, TPZCompMesh* cmesh, ReadJson inputData);
+void NewtonMethod(TPZCompMesh *cmesh, int Niterations, REAL res_tol, REAL corr_tol, TPZLinearAnalysis* an);
+
+void BCInitialSolution(TPZLinearAnalysis* an, TPZCompMesh *cmesh, std::set<int> &bcMatids, ReadJson inputData, int condType);
+
+void ApplyEquationFilter(TPZLinearAnalysis *an, TPZCompMesh *cmesh, std::set<int> &bcMatids, ReadJson inputData, int condType);
+
+void SetAnalysis(TPZLinearAnalysis* an, TPZCompMesh* cmesh, ReadJson inputData);
 
 void PostProcess(ReadJson inputData);
 

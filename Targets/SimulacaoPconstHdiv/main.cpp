@@ -3,7 +3,12 @@
 
 void Hdiv_MixedCT(){
 
-    ReadJson inputData("/home/marina/programming/Stokes-Darcy-Research/VUGS/Inputs/FewVugs.json");
+    //ReadJson inputData("/home/marina/programming/Stokes-Darcy-Research/VUGS/Inputs/SeveralFractures.json");
+    //ReadJson inputData("/home/marina/programming/Stokes-Darcy-Research/VUGS/Inputs/SeveralVugs.json");
+    //ReadJson inputData("/home/marina/programming/Stokes-Darcy-Research/VUGS/Inputs/FewFractures.json");
+    //ReadJson inputData("/home/marina/programming/Stokes-Darcy-Research/VUGS/Inputs/SingleVug.json");
+    ReadJson inputData("/home/marina/programming/Stokes-Darcy-Research/VUGS/Inputs/SingleFracture.json");
+    //ReadJson inputData("/home/marina/programming/Stokes-Darcy-Research/VUGS/Inputs/FractureVug.json");
     
     TPZGeoMesh *gmesh = new TPZGeoMesh;
 
@@ -36,6 +41,8 @@ void Hdiv_MixedCT(){
     }
 
     gmesh = generateGMeshWithPhysTagVec(inputData, filename, meshName);
+
+    PrintGeoMesh(gmesh);
 
     MeshWithSegment(inputData, gmesh);
 
@@ -71,7 +78,19 @@ void Hdiv_MixedCT(){
 
         TPZLinearAnalysis *Analisys = new TPZLinearAnalysis(cmesh_mult, RenumType::ENone);
 
-        Solve(Analisys, cmesh_mult, inputData);
+        SetAnalysis(Analisys, cmesh_mult, inputData);
+        {
+            TPZFMatrix<STATE> &rhs = Analisys->Rhs();
+            rhs.Print(std::cout);
+        }
+        Analisys->Assemble();
+    
+        
+        // BCInitialSolution(Analisys, cmesh_mult, bcId, inputData, 1);
+        // ApplyEquationFilter(Analisys, cmesh_mult, bcId, inputData, 1);
+        // NewtonMethod(cmesh_mult, 5, 1.0e-6, 1.0e-6, Analisys);
+        TPZFMatrix<STATE> &rhs = Analisys->Rhs();
+        Analisys->PrintVectorByElement(std::cout, rhs, 1.e-6);
 
         {
             const std::string plotfile = meshName + approxName;
@@ -89,13 +108,26 @@ void Hdiv_MixedCT(){
     else{
 
         TPZCompMesh *cmesh = CreateMesh(gmesh, inputData);
-        
-        PrintCompMesh(cmesh);
     
-        //CreateAnalisys
         TPZLinearAnalysis *Analisys = new TPZLinearAnalysis(cmesh);
-        Analisys->LoadSolution();
-        Solve(Analisys, cmesh, inputData);
+
+        SetAnalysis(Analisys, cmesh, inputData);
+
+        // {
+        //     TPZFMatrix<STATE> &rhs = Analisys->Rhs();
+        //     rhs.Print(std::cout);
+        // }
+        // Analisys->Assemble();
+        
+        
+        BCInitialSolution(Analisys, cmesh, bcId, inputData, 0);
+        ApplyEquationFilter(Analisys, cmesh, bcId, inputData, 0);
+        NewtonMethod(cmesh, 5, 1.0e-6, 1.0e-6, Analisys);
+
+        TPZFMatrix<STATE> &rhs = Analisys->Rhs();
+        Analisys->PrintVectorByElement(std::cout, rhs, 1.e-6);
+
+        PrintCompMesh(cmesh);
 
         {
             const std::string plotfile = meshName + approxName;
@@ -104,14 +136,6 @@ void Hdiv_MixedCT(){
             auto vtk = TPZVTKGenerator(cmesh, fields, plotfile, vtkRes);
             vtk.Do();
         }
-        
-        // //Configuración del posprocesamiento
-        // int ref = 0; 
-        // std::string plotfile = meshName + approxName + ".vtk";
-  
-        // Analisys->DefineGraphMesh(problemDim, scalnames, vecnames, plotfile);
-        
-        // Analisys->PostProcess(ref, problemDim);
     }
 }
 

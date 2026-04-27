@@ -1,22 +1,22 @@
 {
-  "MeshName" : "SeveralVugs",
+  "MeshName" : "SeveralFractures",
   "MeshDirectory" : "/home/marina/programming/Stokes-Darcy-Research/VUGS/Meshes/", 
   "Simulation" : {
     "ApproximationType" : 0, //H1: 0, Hdiv: 1
-    "ProblemType" : 1 //High Permeability: 0, Constant Pressure: 1
+    "ProblemType" : 0 //High Permeability: 0, Constant Pressure: 1
   },
   "PressurepOrder": 1,
   "Dimension": 2,
   "Resolution": 1,
   "DomainData" : [
     {
-      "Name" : "k11",
+      "Name" : "Darcy",
       "matId" : 1,
-      "Permeability" : 0.01
+      "Permeability" : 0.1
     },
     {
-      "Name" : "Vugs",
-      "matId" : 6,
+      "Name" : "SmallFract",
+      "matId" : 5,
       "Permeability" : 1.0e6
     }
   ],
@@ -29,7 +29,7 @@
     },
     // {
     //   "Name" : "bottom",
-    //   "matId" : 4,
+    //   "matId" : 5,
     //   "Type" : 1, 
     //   "Value" : 0
     // },
@@ -44,6 +44,14 @@
       "matId" : 3,
       "Type" : 0, 
       "Value" : 100
+    }
+  ],
+  "FracBCs" : [ 
+    {
+      "Name" : "FracEnds",
+      "matId" : 10,
+      "Type" : 1, 
+      "Value" : 0
     }
   ]
 }

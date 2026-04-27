@@ -25,7 +25,6 @@ TPZGeoMesh* generateGMeshWithPhysTagVec(ReadJson inputData, std::string filename
 
     for (auto bc: bcData){
         int elDim = Dim-1;
-        if (bc.matId == 10) elDim = 0;
         dim_name_and_physical_tag[elDim][bc.name] = bc.matId;
     }
 
@@ -270,6 +269,7 @@ void SetUniqueVugConnect(TPZGeoMesh *gmesh, TPZCompMesh *cmesh){
 
         if (fracIds.find(gelMatId) == fracIds.end() && vugIds.find(gelMatId) == vugIds.end() && vugBcIds.find(gelMatId) == vugBcIds.end()) continue; 
 
+
         int connIndex = 0;
         auto it = matId_connect.find(gel->MaterialId()); // check if the material ID of the vug already has an associated connect index
         if(it != matId_connect.end()){ // if it has, use the same connect index for all vug elements
@@ -290,7 +290,9 @@ void SetUniqueVugConnect(TPZGeoMesh *gmesh, TPZCompMesh *cmesh){
             cel->SetConnectIndex(side, connIndex);
         }
     }
+
     cmesh->ComputeNodElCon();
+    PrintCompMesh(cmesh);
     cmesh->CleanUpUnconnectedNodes();
 }
 
@@ -414,7 +416,7 @@ TPZCompMesh *CreateFluxMesh(TPZGeoMesh *gmesh, std::set<int> &elsId, std::set<in
         cmesh->Reference()->ResetReference();
         std::vector<BcData> bcData = inputData.FracBCInput();
         cmesh->SetDimModel(1);
-        cmesh->SetDefaultOrder(1);
+        cmesh->SetDefaultOrder(2);
 
         for(auto Id: fracIds) {
             TPZNullMaterial <STATE> *matFrac = new TPZNullMaterial(Id, 1);
@@ -463,18 +465,6 @@ TPZCompMesh *CreatePressureMesh(TPZGeoMesh *gmesh, std::set<int> &elsId, std::se
         }
     
     insertAtomicMaterials(cmesh, elsId, bcId, TypeMesh, inputData);
-
-    // if(inputData.problemType() == 0){ //? Change the pressure order
-    //     cmesh->SetDefaultOrder(1); 
-
-    //     for(auto Id: fracIds) {
-    //         TPZNullMaterial <STATE> *matFrac = new TPZNullMaterial(Id, 1);
-    //         cmesh->InsertMaterialObject(matFrac);
-    //     }
-
-    //     cmesh->ApproxSpace().SetAllCreateFunctionsContinuous();
-    //     cmesh->ApproxSpace().CreateDisconnectedElements(true);
-    // } 
     
     
     cmesh->AutoBuild();
@@ -490,8 +480,9 @@ TPZCompMesh *CreatePressureMesh(TPZGeoMesh *gmesh, std::set<int> &elsId, std::se
     if (inputData.problemType() == 1) 
         SetUniqueVugConnect(gmesh, cmesh);
     
-    cmesh->InitializeBlock();
- 
+    gmesh->ResetReference();
+    cmesh->LoadReferences();
+
     return cmesh;
 }
 
@@ -518,12 +509,15 @@ TPZMultiphysicsCompMesh *CreateMultiMesh(TPZGeoMesh* gmesh, TPZVec<TPZCompMesh *
     std::vector<BcData> FracbcData = inputData.FracBCInput();
     
     // Add materials (weak formulation)
-    TPZMixedDarcyFlow *matDarcy = new TPZMixedDarcyFlow(EMatId, inputData.dim());
+    //TPZMixedDarcyFlow *matDarcy = new TPZMixedDarcyFlow(EMatId, inputData.dim());
+    TVFDarcyMaterial *matDarcy = new TVFDarcyMaterial(EMatId, inputData.dim());
+    matDarcy->SetNonLinearContext(true);
     cmesh->InsertMaterialObject(matDarcy);
     matDarcy->SetConstantPermeability(matId_perm[EMatId]);
     
     for(auto fracId: fracIds) { // Frac elements
-        auto *matDarcyFrac = new TPZMixedDarcyFlow(fracId, 1);
+        auto *matDarcyFrac = new TVFDarcyMaterial(fracId, 1);
+        matDarcyFrac->SetNonLinearContext(true);
         if(inputData.problemType() == 0){
             matDarcyFrac->SetConstantPermeability(matId_perm.at(5));
         }
@@ -531,7 +525,8 @@ TPZMultiphysicsCompMesh *CreateMultiMesh(TPZGeoMesh* gmesh, TPZVec<TPZCompMesh *
     }
 
     for(auto vugId: vugIds) { // Vug elements
-        auto *matDarcyVug = new TPZMixedDarcyFlow(vugId, inputData.dim());
+        auto *matDarcyVug = new TVFDarcyMaterial(vugId, inputData.dim());
+        matDarcyVug->SetNonLinearContext(true);
         if(inputData.problemType() == 0){
             matDarcyVug->SetConstantPermeability(matId_perm.at(6));
         }
@@ -573,6 +568,7 @@ TPZMultiphysicsCompMesh *CreateMultiMesh(TPZGeoMesh* gmesh, TPZVec<TPZCompMesh *
     cmesh->BuildMultiphysicsSpace(meshvec);
     cmesh->CleanUpUnconnectedNodes();
 
+
     CreateInterfaceGeoEls(gmesh); 
     InsertInterfaceEls(cmesh, gmesh, inputData); 
 
@@ -600,12 +596,14 @@ TPZCompMesh *CreateMesh(TPZGeoMesh* gmesh, ReadJson inputData){
     
     // Add materials (weak formulation)
     TPZDarcyFlow *matDarcy = new TPZDarcyFlow(EMatId, inputData.dim());
+    matDarcy->SetNonLinearContext(true);
     matDarcy->SetConstantPermeability(matId_perm.at(EMatId));
     cmesh->InsertMaterialObject(matDarcy);
 
     TPZDarcyFlow *matDarcyFrac = nullptr;
     for(auto Id: fracIds) {
         matDarcyFrac = new TPZDarcyFlow(Id, 1);
+        matDarcyFrac->SetNonLinearContext(true);
         if(inputData.problemType() == 0){
             matDarcyFrac->SetConstantPermeability(matId_perm.at(5));
         }
@@ -615,6 +613,7 @@ TPZCompMesh *CreateMesh(TPZGeoMesh* gmesh, ReadJson inputData){
     TPZDarcyFlow *matDarcyVug = nullptr;
     for(auto Id: vugIds) {
         matDarcyVug = new TPZDarcyFlow(Id, inputData.dim());
+        matDarcyVug->SetNonLinearContext(true);
         if(inputData.problemType() == 0) {
             matDarcyVug->SetConstantPermeability(matId_perm.at(6));
         }
@@ -718,6 +717,8 @@ void InsertInterfaceEls(TPZMultiphysicsCompMesh *cmesh, TPZGeoMesh *gmesh, ReadJ
         int nSides = gel->NSides();
         TPZGeoElSide gelSide(gel, nSides - 1);
         TPZStack<TPZGeoElSide> allneigh;
+
+        // gelSide.AllNeighbours(allneigh);
 
         TPZCompElSide neighPressure = gelSide.HasNeighbour(EVugId).Reference(); //or EFracId
         TPZCompElSide neighHdiv = gelSide.HasNeighbour(EVugBcId).Reference(); //or EFracBcId
@@ -927,15 +928,194 @@ void SideOrientation1D(TPZCompMesh *cmesh){
             TPZInterpolatedElement *neighintel = dynamic_cast<TPZInterpolatedElement *>(celneigh);
             neighintel->SetSideOrient(neigh.Side(), -gelorientation);
         }
+    }
+}
 
+
+void NewtonMethod(TPZCompMesh *cmesh, int Niterations, REAL res_tol, REAL corr_tol, TPZLinearAnalysis* an){
+
+    // Find increments du_k, dp_k
+    // Res(u_{k+1}, p_{k+1}) = Res(u_k, p_k) + TanMatrix [du_k, dp_k]^T
+
+    // Compute solutions u_{k+1}, p_{k+1}
+    // u_{k+1} = u_k + du_k
+    // p_{k+1} = p_k + dp_k
+
+    REAL res_norm = 1.0;
+    REAL corr_norm = 1.0;
+    bool convergence = false;
+
+    TPZFMatrix<STATE> Sol = an->Solution(); // Initial solution
+
+    for(int it = 0; it < Niterations; it++){
+
+        an->Assemble();
+
+        TPZFMatrix<STATE> rhs = an->Rhs();
+        rhs.Print(std::cout);
+        // Check residual convergence
+        if (it > 0)
+        {
+            TPZFMatrix<STATE> rhs = an->Rhs();
+            std::cout << std::endl;
+            res_norm = Norm(rhs);
+            std::cout << "\n------Iteration: " << it << std::endl;
+            std::cout << "---------Residual norm: " << res_norm << std::endl;
+            std::cout << "---------Correction norm: " << corr_norm << std::endl;
+            if (res_norm < res_tol && corr_norm < corr_tol)
+            {   
+                convergence = true;
+                break;
+            }
+        }
+
+        // Compute increments du, dp
+        an->Solve();
+        TPZFMatrix<STATE> dsol = an->Solution();
+
+        // Update solution
+        corr_norm = Norm(dsol);
+        Sol += dsol;
+        cmesh->LoadSolution(Sol); //!Ask
+        if(cmesh->ApproxSpace().Style() == TPZCreateApproximationSpace::EMultiphysics) cmesh->TransferMultiphysicsSolution(); //!Ask
+    }
+
+    if (!convergence)
+    {
+        std::cout << "------Iterative method did not converge.\n";
     }
 
 }
 
+void BCInitialSolution(TPZLinearAnalysis *an, TPZCompMesh *cmesh, std::set<int> &bcMatids, ReadJson inputData, int condType) 
+{   
+    // Imposing Dirichlet BCs directly in the cmesh solution vector
+    cmesh->Reference()->ResetReference();
+    cmesh->LoadReferences();
+    TPZGeoMesh *gmesh = cmesh->Reference();
 
-void Solve(TPZLinearAnalysis* an, TPZCompMesh* cmesh, ReadJson inputData){
+    std::vector<BcData> bcData = inputData.BCInput();
+    int bcId = 0;
+    int bcType = 0;
+    TPZManVector<double, 3> bcValue;
+
+    TPZFMatrix<STATE> &cmesh_sol = cmesh->Solution();
+    int nel = gmesh->NElements();
+    for (int el = 0; el < nel; el++)
+    {
+        TPZGeoEl *gel = gmesh->Element(el);
+
+        int elMatID = gel->MaterialId();
+
+        if (bcMatids.find(elMatID) == bcMatids.end() || vugBcIds.find(elMatID) != vugBcIds.end() || fracBcIds.find(elMatID) != fracBcIds.end())
+            continue;
+
+
+        TPZCompEl *cel = gel->Reference();
+
+        int64_t nConnects = cel->NConnects();
+
+        int ncorner = gel->NCornerNodes();
+
+        if(cmesh->ApproxSpace().Style() != TPZCreateApproximationSpace::EMultiphysics) nConnects = ncorner; //Ask
+
+        for (int64_t iconn = 0; iconn < nConnects; iconn++) {
+            
+            int64_t seq = cel->Connect(iconn).SequenceNumber();
+            
+            auto firstEq = cmesh->Block().Position(seq);
+            
+            int64_t blockSize = cmesh->Block().Size(seq);
+
+            REAL bcValue;
+            bool found = false;
+            for (auto bc: bcData){
+                if(bc.matId == elMatID){
+                    bcValue = bc.value[0];
+                    bcType = bc.type;
+                    found = true;
+                    break;
+                }
+            }
+
+            if(!found) DebugStop();
+
+            if(bcType == condType){
+                for (int64_t eq = firstEq; eq < firstEq + blockSize; eq++) { // loop over equations block
+                    if (eq - firstEq < ncorner) cmesh_sol.PutVal(eq, 0, bcValue);
+                }
+            }
+        }
+    }
+
+    if(cmesh->ApproxSpace().Style() == TPZCreateApproximationSpace::EMultiphysics) cmesh->TransferMultiphysicsSolution(); 
+
+    PrintCompMesh(cmesh);
+
+    // Insert cmesh Solution to the Analysis Solution
+    int cmesh_neq = cmesh->NEquations();
+    TPZFMatrix<STATE> &sol = an->Solution();
+    for (int i = 0; i < cmesh_neq; i++)
+    {
+        sol.PutVal(i, 0, cmesh_sol.GetVal(i, 0));
+    }
+}
+
+void ApplyEquationFilter(TPZLinearAnalysis *an, TPZCompMesh *cmesh, std::set<int> &bcMatids, ReadJson inputData, int condType) //! Ask
+{
+    cmesh->LoadReferences();
+    std::set<int64_t> removeEquations;
+    TPZGeoMesh *gmesh = cmesh->Reference();
+    TPZFMatrix<STATE> sol = cmesh->Solution();
+
+    std::vector<BcData> bcData = inputData.BCInput();
+    std::vector<BcData> fracBcData = inputData.FracBCInput();
+    int bcId = 0;
+    int bcType = 0;
+
+    for (auto el : gmesh->ElementVec())
+    {
+        int elMatID = el->MaterialId();
+
+        if (bcMatids.find(elMatID) == bcMatids.end() || vugBcIds.find(elMatID) != vugBcIds.end() || fracBcIds.find(elMatID) != fracBcIds.end())
+            continue;
+
+        for(auto bc: bcData){
+            bcType = bc.type;
+            bcId = bc.matId;
+            if(bcId == elMatID) 
+                break;
+        }
+
+        if (bcType != condType)
+            continue;
+
+        TPZCompEl *compEl = el->Reference();
+
+        int64_t nConnects = compEl->NConnects();
+
+        for (int64_t iconn = 0; iconn < nConnects; iconn++)
+        {
+            int64_t seq = compEl->Connect(iconn).SequenceNumber();
+            auto firstEq = cmesh->Block().Position(seq);
+            int64_t blockSize = cmesh->Block().Size(seq);
+
+            for (int64_t eq = firstEq; eq < firstEq + blockSize; eq++)
+            {
+                removeEquations.insert(eq);
+            }
+        }
+    }
+
+    TPZEquationFilter filter(cmesh->NEquations());
+    filter.ExcludeEquations(removeEquations);
+    an->StructMatrix()->EquationFilter() = filter;
+}
+
+void SetAnalysis(TPZLinearAnalysis* an, TPZCompMesh* cmesh, ReadJson inputData){
 
     // an->LoadSolution();
+
 
     #ifdef PZ_USING_MKL
     TPZSSpStructMatrix<STATE> matMixed(cmesh);

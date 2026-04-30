@@ -511,13 +511,13 @@ TPZMultiphysicsCompMesh *CreateMultiMesh(TPZGeoMesh* gmesh, TPZVec<TPZCompMesh *
     // Add materials (weak formulation)
     //TPZMixedDarcyFlow *matDarcy = new TPZMixedDarcyFlow(EMatId, inputData.dim());
     TVFDarcyMaterial *matDarcy = new TVFDarcyMaterial(EMatId, inputData.dim());
-    matDarcy->SetNonLinearContext(true);
+    matDarcy->SetNonLinearContext(false);
     cmesh->InsertMaterialObject(matDarcy);
     matDarcy->SetConstantPermeability(matId_perm[EMatId]);
     
     for(auto fracId: fracIds) { // Frac elements
         auto *matDarcyFrac = new TVFDarcyMaterial(fracId, 1);
-        matDarcyFrac->SetNonLinearContext(true);
+        matDarcyFrac->SetNonLinearContext(false);
         if(inputData.problemType() == 0){
             matDarcyFrac->SetConstantPermeability(matId_perm.at(5));
         }
@@ -526,7 +526,7 @@ TPZMultiphysicsCompMesh *CreateMultiMesh(TPZGeoMesh* gmesh, TPZVec<TPZCompMesh *
 
     for(auto vugId: vugIds) { // Vug elements
         auto *matDarcyVug = new TVFDarcyMaterial(vugId, inputData.dim());
-        matDarcyVug->SetNonLinearContext(true);
+        matDarcyVug->SetNonLinearContext(false);
         if(inputData.problemType() == 0){
             matDarcyVug->SetConstantPermeability(matId_perm.at(6));
         }
@@ -596,14 +596,14 @@ TPZCompMesh *CreateMesh(TPZGeoMesh* gmesh, ReadJson inputData){
     
     // Add materials (weak formulation)
     TPZDarcyFlow *matDarcy = new TPZDarcyFlow(EMatId, inputData.dim());
-    matDarcy->SetNonLinearContext(true);
+    matDarcy->SetNonLinearContext(false);
     matDarcy->SetConstantPermeability(matId_perm.at(EMatId));
     cmesh->InsertMaterialObject(matDarcy);
 
     TPZDarcyFlow *matDarcyFrac = nullptr;
     for(auto Id: fracIds) {
         matDarcyFrac = new TPZDarcyFlow(Id, 1);
-        matDarcyFrac->SetNonLinearContext(true);
+        matDarcyFrac->SetNonLinearContext(false);
         if(inputData.problemType() == 0){
             matDarcyFrac->SetConstantPermeability(matId_perm.at(5));
         }
@@ -613,7 +613,7 @@ TPZCompMesh *CreateMesh(TPZGeoMesh* gmesh, ReadJson inputData){
     TPZDarcyFlow *matDarcyVug = nullptr;
     for(auto Id: vugIds) {
         matDarcyVug = new TPZDarcyFlow(Id, inputData.dim());
-        matDarcyVug->SetNonLinearContext(true);
+        matDarcyVug->SetNonLinearContext(false);
         if(inputData.problemType() == 0) {
             matDarcyVug->SetConstantPermeability(matId_perm.at(6));
         }
@@ -633,14 +633,14 @@ TPZCompMesh *CreateMesh(TPZGeoMesh* gmesh, ReadJson inputData){
         cmesh->InsertMaterialObject(face);
     }
 
-    // val2[0] = 0;
-    // for(auto bcId: fracBcIds) { // Frac boundary elements
-    //     TPZBndCond *faceFrac = matDarcy->CreateBC(matDarcy, bcId, 0, val1, val2);
-    //     cmesh->InsertMaterialObject(faceFrac);
-    // }
+    val2[0] = 0;
+    for(auto bcId: fracBcIds) { // Frac boundary elements
+        TPZBndCond *faceFrac = matDarcy->CreateBC(matDarcy, bcId, 0, val1, val2);
+        cmesh->InsertMaterialObject(faceFrac);
+    }
 
     // for(auto bcId: vugBcIds) { // Vug boundary elements 
-    //     TPZBndCond *faceVug = matDarcy->CreateBC(matDarcy, bcId, 0, val1, val2);
+    //     TPZBndCond *faceVug = matDarcyVug->CreateBC(matDarcyVug, bcId, 0, val1, val2);
     //     cmesh->InsertMaterialObject(faceVug);
     // }
 
@@ -931,6 +931,133 @@ void SideOrientation1D(TPZCompMesh *cmesh){
     }
 }
 
+void GetCompEls(TPZGeoMesh* gmesh, TPZCompMesh *cmeshH1, TPZCompMesh *cmeshHdiv, TPZVec<TPZCompEl*> &celVecH1, TPZVec<TPZCompEl*> &celVecHdiv){
+
+    int64_t nels = gmesh->NElements();
+    int64_t nels1 = cmeshH1->NElements();
+    int64_t nels2 = cmeshHdiv->NElements();
+    // celVecH1.Resize(nels);
+    // celVecHdiv.Resize(nels);
+    
+
+    for(int64_t el = 0; el < nels1; el++){
+
+        TPZCompEl* celH1 = cmeshH1->Element(el);
+        TPZGeoEl *gel = celH1->Reference();
+        if(!gel) DebugStop();
+        int64_t gelId = gel->Index();
+
+        celVecH1[gelId] = celH1;
+    }
+
+    for(int64_t el = 0; el < nels2; el++){
+
+        TPZCompEl* celHdiv = cmeshHdiv->Element(el);
+        TPZGeoEl *gel = celHdiv->Reference();
+        if(!gel) DebugStop();
+        int64_t gelId = gel->Index();
+
+        celVecHdiv[gelId] = celHdiv;
+    }
+
+}
+
+REAL ComputeErrorH1Hdiv(TPZVec<TPZCompEl*> &celVecH1, TPZVec<TPZCompEl*> &celVecHdiv, int matId, TPZFMatrix<STATE> &elSolMat){
+
+    REAL error = 0;
+    int nels = celVecH1.size();
+
+    for(int el = 0; el < nels; el++){
+
+        if(!celVecH1[el] || !celVecHdiv[el]) continue;
+
+        int elMatId = celVecH1[el]->Reference()->MaterialId();
+
+        if (elMatId != matId) continue;
+
+        int64_t H1index = celVecH1[el]->Index();
+
+        elSolMat(H1index,0) = CalcElementError(celVecH1[el], celVecHdiv[el]);
+
+        error += elSolMat(H1index,0);
+    }
+    return error;
+}
+
+REAL CalcElementError(TPZCompEl* celH1, TPZCompEl* celHdiv){
+
+    REAL result = 0.;
+    if(!celH1 || !celHdiv) {
+        std::cout << "No computational element found!\n";
+        return result;
+    }
+
+    int dim = celH1->Dimension();
+    int matId = celH1->Reference()->MaterialId();
+
+ 
+    TPZMaterial *matH1 = celH1->Material();
+    TPZMaterial *matHdiv = celHdiv->Material();
+
+    //TPZMaterial *mat = cmeshH1->FindMaterial(EMatId);
+    TPZDarcyFlow *matDarcy = dynamic_cast<TPZDarcyFlow*>(matH1); 
+    //downcasting—converting a base class pointer to a derived class pointer
+
+    //const TPZIntPoints intrule = celH1->GetIntegrationRule(); //! Ask
+    TPZGeoEl *gel = celH1->Reference();
+    TPZIntPoints *intrule = gel->CreateSideIntegrationRule(gel->NSides()-1,4); //! not sure order
+    int npoints = intrule->NPoints();
+
+    TPZVec<REAL> xi(dim, 0.0);
+    TPZFNMatrix<9,REAL> jac(dim,dim),jacinv(dim,dim),axes(dim,3); //jacobian
+    REAL detjac;
+
+    TPZVec<STATE> solH1(dim, 0.0);
+    TPZVec<STATE> solH1x(1, 0.0);
+    TPZVec<STATE> solH1y(1, 0.0);
+    TPZVec<STATE> solHdiv(dim, 0.0);
+    TPZFMatrix<STATE> Perm(dim, dim, 0.0), InvPerm(dim, dim, 0.0); 
+
+    // Performing numerical integration
+    for (int point = 0; point < npoints; point++) {
+        REAL weight;
+        intrule->Point(point, xi, weight);
+        gel->Jacobian(xi, jac, axes, detjac, jacinv);
+
+        celH1->Solution(xi, 2, solH1); //GradP
+        celH1->Solution(xi, 3, solH1x); //kGradP
+        celH1->Solution(xi, 4, solH1y); //kGradP
+        celHdiv->Solution(xi, 1, solHdiv); //Flux
+
+        const STATE perm = matDarcy->GetPermeability(xi);
+        const STATE inv_perm = 1 / perm;
+        for (int i = 0; i < dim; i++) {
+            Perm(i, i) = perm;
+            InvPerm(i, i) = inv_perm; //! Check
+        }
+
+        TPZFMatrix<STATE> fluxH1(dim, 1, 0.0);
+        // for (int i = 0; i < dim; i++) {
+        //     for (int j = 0; j < dim; j++) {
+        //         fluxH1(i,0) += Perm(i,j)*solH1[j];
+        //     }
+        // }
+
+        fluxH1(0,0) = solH1x[0];
+        fluxH1(1,0) = solH1y[0];
+
+        REAL aux = 0.;
+        for (int i = 0; i < dim; i++) {
+            for (int j = 0; j < dim; j++) {
+                aux += (fluxH1(i,0)+solHdiv[i])*InvPerm(i,j)*(fluxH1(j,0)+solHdiv[j]);
+            }
+        }
+
+        result += aux*weight*fabs(detjac);
+    }
+    delete intrule;
+    return result;
+}
 
 void NewtonMethod(TPZCompMesh *cmesh, int Niterations, REAL res_tol, REAL corr_tol, TPZLinearAnalysis* an){
 

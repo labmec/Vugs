@@ -171,6 +171,12 @@ void CreateInterfaceGeoEls(TPZGeoMesh *gmesh);
 
 void InsertInterfaceEls(TPZMultiphysicsCompMesh *cmesh, TPZGeoMesh *gmesh, ReadJson inputData);
 
+void GetCompEls(TPZGeoMesh* gmesh, TPZCompMesh *cmeshH1, TPZCompMesh *cmeshHdiv, TPZVec<TPZCompEl*> &celVecH1, TPZVec<TPZCompEl*> &celVecHdiv);
+
+REAL ComputeErrorH1Hdiv(TPZVec<TPZCompEl*> &celVecH1, TPZVec<TPZCompEl*> &celVecHdiv, int matId, TPZFMatrix<STATE> &elSolMat);
+
+REAL CalcElementError(TPZCompEl* celH1, TPZCompEl* celHdiv);
+
 void NewtonMethod(TPZCompMesh *cmesh, int Niterations, REAL res_tol, REAL corr_tol, TPZLinearAnalysis* an);
 
 void BCInitialSolution(TPZLinearAnalysis* an, TPZCompMesh *cmesh, std::set<int> &bcMatids, ReadJson inputData, int condType);

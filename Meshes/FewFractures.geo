@@ -1,6 +1,6 @@
 // Gmsh project created on Tue Mar 17 14:46:21 2026
 //SetFactory("OpenCASCADE");
-cl__1 = 10;
+cl__1 = 35;
 Point(1) = {30, 8, 0, cl__1};
 Point(5) = {25, 15, 0, cl__1};
 Point(12) = {0, 0, 0, cl__1};
@@ -17,8 +17,8 @@ Point(19) = {15, 21, 0, cl__1};
 Point(20) = {55, 60, 0, cl__1};
 Point(21) = {45, 68, 0, cl__1};
 //
-//Point(22) = {66, 0, 0, cl__1};
-//Point(23) = {66, 0, 0, cl__1};
+Point(22) = {10, 60, 0, cl__1};
+Point(23) = {24, 60, 0, cl__1};
 
 Line(12) = {12, 13};
 Line(13) = {13, 14};
@@ -26,6 +26,7 @@ Line(14) = {14, 15};
 Line(15) = {15, 12};
 Line(16) = {5,1};
 Line(17) = {1,5};
+
 
 
 Line(18) = {16,17};
@@ -36,6 +37,9 @@ Line(21) = {19,18};
 //
 Line(22) = {20,21};
 Line(23) = {21,20};
+//
+Line(24) = {22,23};
+Line(25) = {23,22};
 
 //Curve Loop(11) = {1, 2, 3, 4, 5, 6, 7, 8, 9};
 //Plane Surface(11) = {11};
@@ -56,7 +60,7 @@ Curve Loop(14) = {22,23};
 Plane Surface(14) = {14};
 
 //Curve Loop(1000) = {1, 2, 3, 4, 5, 6, 7, 8, 9, -15, -14, -13, -12};
-Curve Loop(1000) = { 16,17,18,19,20,21,22,23,-15, -14, -13, -12};
+Curve Loop(1000) = { 16,17,18,19,20,21,22,23, 24,25,-15, -14, -13, -12};
 //Curve Loop(1001) = { 20,21,22,23};
 
 //Curve Loop(1000) = {  -15, -14, -13, -12};
@@ -70,8 +74,8 @@ Physical Curve("outlet", 3) = {12};
 Physical Curve("top", 4) = {13,15};
 //Physical Curve("bottom", 5) = {15};
 //Physical Surface("Vugs",6)={11};
-Physical Curve("SmallFract",5)={16,17,18,19,20,21,22,23};
-Physical Point("FracEnds",10)={1,5,16,17,18,19,20,21};
+Physical Curve("SmallFract",5)={16,17,18,19,20,21,22,23,24,25};
+Physical Point("FracEnds",10)={1,5,16,17,18,19,20,21,22,23};
 
 Coherence;
 

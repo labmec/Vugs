@@ -41,6 +41,8 @@ using json = nlohmann::json;
 #include "TPZHDivApproxCreator.h"
 #include "TPZLagrangeMultiplierCS.h"
 #include "pzintel.h"
+#include "TPZRefPatternDataBase.h"
+#include "TPZRefPatternTools.h"
 
 enum MatID{
     EMatId = 1,
@@ -159,6 +161,8 @@ void MeshWithSegmentPhil(ReadJson inputData, TPZGeoMesh *gmesh);
 
 void MeshWithSegment(ReadJson inputData, TPZGeoMesh *gmesh);
 
+void RefineElement(TPZGeoMesh *gmesh, int matIdtoFind, int maxlevel);
+
 void SideOrientation(TPZCompMesh *cmesh, ReadJson inputData);
 
 void SideOrientation1D(TPZCompMesh *cmesh);
@@ -173,7 +177,7 @@ void InsertInterfaceEls(TPZMultiphysicsCompMesh *cmesh, TPZGeoMesh *gmesh, ReadJ
 
 void GetCompEls(TPZGeoMesh* gmesh, TPZCompMesh *cmeshH1, TPZCompMesh *cmeshHdiv, TPZVec<TPZCompEl*> &celVecH1, TPZVec<TPZCompEl*> &celVecHdiv);
 
-REAL ComputeErrorH1Hdiv(TPZVec<TPZCompEl*> &celVecH1, TPZVec<TPZCompEl*> &celVecHdiv, int matId, TPZFMatrix<STATE> &elSolMat);
+REAL ComputeErrorH1Hdiv(TPZVec<TPZCompEl*> &celVecH1, TPZVec<TPZCompEl*> &celVecHdiv, std::set<int> matId, TPZFMatrix<STATE> &elSolMat);
 
 REAL CalcElementError(TPZCompEl* celH1, TPZCompEl* celHdiv);
 

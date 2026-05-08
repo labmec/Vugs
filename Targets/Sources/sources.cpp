@@ -144,6 +144,30 @@ void MeshWithSegmentPhil(ReadJson inputData, TPZGeoMesh *gmesh){
 
 }
 
+void RefineElement(TPZGeoMesh *gmesh, int matIdtoFind, int maxlevel){
+
+    int nels = gmesh->NElements();
+    std::set<int> matids2 = {matIdtoFind};
+  
+    for(int el = 0; el < nels; el++){
+        TPZGeoEl *gel = gmesh->Element(el);
+
+        if(gel->MaterialId() == matIdtoFind){
+            for(int il = 1; il <= maxlevel; il++){
+                TPZGeoElSide gelside(gel);
+                TPZGeoElSide neigh = gelside.Neighbour();
+                while(neigh != gelside){
+                    TPZGeoEl *neighgel = neigh.Element();
+                    if(neighgel->Level() < il){
+                        TPZRefPatternTools::RefineDirectional(neigh.Element(), matids2);
+                    }
+                    neigh = neigh.Neighbour();
+                }
+            }
+        }
+    }
+}
+
 
 //TODO Arrumar para fazer Vugs e Frac Juntos
 void MeshWithSegment(ReadJson inputData, TPZGeoMesh *gmesh){
@@ -169,6 +193,8 @@ void MeshWithSegment(ReadJson inputData, TPZGeoMesh *gmesh){
     for(int el = 0; el < nels; el++){
         TPZGeoEl *gel = gmesh->Element(el);
         if(!gel) continue;
+
+        if(gel->HasSubElement()) continue;
 
         if(gel->MaterialId() != matid_frac && gel->MaterialId() != matid_vug) continue; 
 
@@ -196,6 +222,8 @@ void MeshWithSegment(ReadJson inputData, TPZGeoMesh *gmesh){
             if(verificador[elcheck] != -1) continue; 
 
             TPZGeoEl *gelcheck = gmesh->Element(elcheck); 
+
+            if(gelcheck->HasSubElement()) continue;
             verificador[elcheck] = mat+500; 
             gelcheck->SetMaterialId(mat+500); 
 
@@ -221,6 +249,7 @@ void MeshWithSegment(ReadJson inputData, TPZGeoMesh *gmesh){
                 gelside.AllNeighbours(allneigh); 
                 for(auto neigh: allneigh){
                     TPZGeoEl* gelNeigh = neigh.Element();
+                    if(gelNeigh->HasSubElement()) continue;
                     if(gelNeigh->MaterialId() == EMatId && gelside.Dimension() == gmesh->Dimension()-1){ 
                        gelside.Element()->CreateBCGeoEl(iside, mat);
                     }
@@ -570,6 +599,7 @@ TPZMultiphysicsCompMesh *CreateMultiMesh(TPZGeoMesh* gmesh, TPZVec<TPZCompMesh *
 
 
     CreateInterfaceGeoEls(gmesh); 
+    PrintGeoMesh(gmesh);
     InsertInterfaceEls(cmesh, gmesh, inputData); 
 
     cmesh->InitializeBlock();
@@ -634,10 +664,10 @@ TPZCompMesh *CreateMesh(TPZGeoMesh* gmesh, ReadJson inputData){
     }
 
     val2[0] = 0;
-    for(auto bcId: fracBcIds) { // Frac boundary elements
-        TPZBndCond *faceFrac = matDarcy->CreateBC(matDarcy, bcId, 0, val1, val2);
-        cmesh->InsertMaterialObject(faceFrac);
-    }
+    // for(auto bcId: fracBcIds) { // Frac boundary elements
+    //     TPZBndCond *faceFrac = matDarcy->CreateBC(matDarcy, bcId, 0, val1, val2);
+    //     cmesh->InsertMaterialObject(faceFrac);
+    // }
 
     // for(auto bcId: vugBcIds) { // Vug boundary elements 
     //     TPZBndCond *faceVug = matDarcyVug->CreateBC(matDarcyVug, bcId, 0, val1, val2);
@@ -713,6 +743,8 @@ void InsertInterfaceEls(TPZMultiphysicsCompMesh *cmesh, TPZGeoMesh *gmesh, ReadJ
         TPZGeoEl *gel = gmesh->Element(el);
         //TPZCompEl *cel = gel->Reference();
         if(!gel || gel->MaterialId() != ELagrange) continue;
+
+        if(gel->HasSubElement()) continue;
 
         int nSides = gel->NSides();
         TPZGeoElSide gelSide(gel, nSides - 1);
@@ -813,7 +845,6 @@ void SideOrientation(TPZCompMesh *cmesh, ReadJson inputData){ //CheckSideOrienta
                 if(inputData.problemType() == 0 && (vugBcIds.find(neigh.Element()->MaterialId()) != vugBcIds.end())) continue;          
                 TPZInterpolatedElement *intel = dynamic_cast<TPZInterpolatedElement *>(cel);
                 int orientation = intel->GetSideOrient(side);
-                std::cout << orientation << "\n";
                 //int orientation = gel->NormalOrientation(side);
                 intel->SetSideOrient(side, 1.);
             }
@@ -962,9 +993,10 @@ void GetCompEls(TPZGeoMesh* gmesh, TPZCompMesh *cmeshH1, TPZCompMesh *cmeshHdiv,
 
 }
 
-REAL ComputeErrorH1Hdiv(TPZVec<TPZCompEl*> &celVecH1, TPZVec<TPZCompEl*> &celVecHdiv, int matId, TPZFMatrix<STATE> &elSolMat){
+REAL ComputeErrorH1Hdiv(TPZVec<TPZCompEl*> &celVecH1, TPZVec<TPZCompEl*> &celVecHdiv, std::set<int> matId, TPZFMatrix<STATE> &elSolMat){
 
     REAL error = 0;
+    REAL elerror = 0;
     int nels = celVecH1.size();
 
     for(int el = 0; el < nels; el++){
@@ -973,15 +1005,17 @@ REAL ComputeErrorH1Hdiv(TPZVec<TPZCompEl*> &celVecH1, TPZVec<TPZCompEl*> &celVec
 
         int elMatId = celVecH1[el]->Reference()->MaterialId();
 
-        if (elMatId != matId) continue;
+        if (matId.find(elMatId) == matId.end()) continue;
 
         int64_t H1index = celVecH1[el]->Index();
 
-        elSolMat(H1index,0) = CalcElementError(celVecH1[el], celVecHdiv[el]);
+        elerror = CalcElementError(celVecH1[el], celVecHdiv[el]);
 
-        error += elSolMat(H1index,0);
+        elSolMat(H1index,0) = std::sqrt(elerror);
+
+        error += elerror;
     }
-    return error;
+    return std::sqrt(error);
 }
 
 REAL CalcElementError(TPZCompEl* celH1, TPZCompEl* celHdiv){
@@ -1037,14 +1071,14 @@ REAL CalcElementError(TPZCompEl* celH1, TPZCompEl* celHdiv){
         }
 
         TPZFMatrix<STATE> fluxH1(dim, 1, 0.0);
-        // for (int i = 0; i < dim; i++) {
-        //     for (int j = 0; j < dim; j++) {
-        //         fluxH1(i,0) += Perm(i,j)*solH1[j];
-        //     }
-        // }
+        for (int i = 0; i < dim; i++) {
+            for (int j = 0; j < dim; j++) {
+                fluxH1(i,0) += Perm(i,j)*solH1[j];
+            }
+        }
 
-        fluxH1(0,0) = solH1x[0];
-        fluxH1(1,0) = solH1y[0];
+        // fluxH1(0,0) = solH1x[0];
+        // if (dim > 1) fluxH1(1,0) = solH1y[0];
 
         REAL aux = 0.;
         for (int i = 0; i < dim; i++) {
@@ -1249,7 +1283,7 @@ void SetAnalysis(TPZLinearAnalysis* an, TPZCompMesh* cmesh, ReadJson inputData){
     #else
     TPZFStructMatrix<STATE> matMixed(cmesh);
     #endif
-    matMixed.SetNumThreads(0);
+    matMixed.SetNumThreads(4);
     an->SetStructuralMatrix(matMixed);
 
     TPZStepSolver<STATE> step;

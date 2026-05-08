@@ -1,12 +1,14 @@
 #include "sources.h"
 #include "pzlog.h"
+#include "pzcheckgeom.h"
 
-void Hdiv_MixedCT(){
+void Hdiv_MixedCT(int refLevel, std::ofstream &outfile){
 
     //ReadJson inputData("/home/marina/programming/Stokes-Darcy-Research/VUGS/Inputs/SeveralFractures.json");
     //ReadJson inputData("/home/marina/programming/Stokes-Darcy-Research/VUGS/Inputs/SeveralVugs.json");
     //ReadJson inputData("/home/marina/programming/Stokes-Darcy-Research/VUGS/Inputs/FewFractures.json");
-    ReadJson inputData("/home/marina/programming/Stokes-Darcy-Research/VUGS/Inputs/SingleVug.json");
+    ReadJson inputData("/home/marina/programming/Stokes-Darcy-Research/VUGS/Inputs/FewVugs.json");
+    //ReadJson inputData("/home/marina/programming/Stokes-Darcy-Research/VUGS/Inputs/SingleVug.json");
     //ReadJson inputData("/home/marina/programming/Stokes-Darcy-Research/VUGS/Inputs/SingleFracture.json");
     //ReadJson inputData("/home/marina/programming/Stokes-Darcy-Research/VUGS/Inputs/FractureVug.json");
     
@@ -23,6 +25,8 @@ void Hdiv_MixedCT(){
     int problemType = inputData.problemType();
 
     int pressOrder = inputData.pressOrder();
+
+    int refineLevel = refLevel;
 
 
     std::string approxName;
@@ -41,6 +45,17 @@ void Hdiv_MixedCT(){
     }
 
     gmesh = generateGMeshWithPhysTagVec(inputData, filename, meshName);
+    {
+        TPZCheckGeom check(gmesh);
+        check.UniformRefine(refineLevel);
+    }
+
+    PrintGeoMesh(gmesh);
+
+    if(!inputData.FracBCInput().empty()){
+        std::set<int> fracMatId = {inputData.FracBCInput()[0].matId};
+        RefineElement(gmesh, inputData.FracBCInput()[0].matId, 0);
+    }
 
     PrintGeoMesh(gmesh);
 
@@ -153,7 +168,7 @@ void Hdiv_MixedCT(){
         }
 
         PrintCompMesh(cmesh);
-        PrintCompMesh(cmesh_mult);
+        PrintCompMesh(Flux_cmesh);
 
         // Estimating Error
         int64_t nels = gmesh->NElements();
@@ -163,18 +178,20 @@ void Hdiv_MixedCT(){
         TPZSolutionMatrix &solMat = cmesh->ElementSolution();
         solMat.Redim(nelsH1,1);
         GetCompEls(gmesh, cmesh, Flux_cmesh, celH1, celHdiv);
-        REAL error = ComputeErrorH1Hdiv(celH1, celHdiv, EMatId, solMat);
+        REAL error = ComputeErrorH1Hdiv(celH1, celHdiv, elsId, solMat);
+        std::cout << "Refine Level: " << refineLevel << "\n";
         std::cout << "Error: " << error << "\n";
+        outfile << refineLevel << "\t" << error << std::endl;
 
         const char mychar = 'm';
         const char* name = &mychar;
-        cmesh->ElementSolution().Print(name);
+        //cmesh->ElementSolution().Print(name);
         //std::cout << CalcElementError(celH1[57], celHdiv[57], inputData) << "\n";
 
         {
             const std::string plotfile = meshName + "_H1";
             constexpr int vtkRes{0};
-            TPZManVector<std::string, 3> fields = {"Flux", "Pressure", "GradU", "EstimatedError"};
+            TPZManVector<std::string, 3> fields = {"Flux", "Pressure", "GradU", "NormKDu", "EstimatedError"};
             auto vtk = TPZVTKGenerator(cmesh, fields, plotfile, vtkRes);
             vtk.Do();
         }
@@ -224,6 +241,12 @@ int main (){
 #ifdef PZ_LOG
     TPZLogger::InitializePZLOG();
 #endif
-    Hdiv_MixedCT();
+    gRefDBase.InitializeRefPatterns(2);
+    
+    std::ofstream fileErrors("errorsH1Hdiv.txt", std::ios::app);
+    fileErrors << "\nRef Level " << " Error"<< std::endl;
+    int refMax = 4;
+    for(int ref = 0; ref <= refMax; ref++)
+        Hdiv_MixedCT(ref, fileErrors);
     return 0;
 }

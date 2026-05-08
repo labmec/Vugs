@@ -1,8 +1,8 @@
 {
-  "MeshName" : "SingleFracture",
+  "MeshName" : "SingleFractureHor",
   "MeshDirectory" : "/home/marina/programming/Stokes-Darcy-Research/VUGS/Meshes/", 
   "Simulation" : {
-    "ApproximationType" : 1, //H1: 0, Hdiv: 1
+    "ApproximationType" : 2, //H1: 0, Hdiv: 1
     "ProblemType" : 0 //High Permeability: 0, Constant Pressure: 1
   },
   "PressurepOrder": 1,
@@ -17,7 +17,7 @@
     {
       "Name" : "SmallFract",
       "matId" : 5,
-      "Permeability" : 1.0e6
+      "Permeability" : 1.0e-2
     }
   ],
   "BCs": [

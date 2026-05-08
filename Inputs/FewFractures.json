@@ -2,7 +2,7 @@
   "MeshName" : "FewFractures",
   "MeshDirectory" : "/home/marina/programming/Stokes-Darcy-Research/VUGS/Meshes/", 
   "Simulation" : {
-    "ApproximationType" : 1, //H1: 0, Hdiv: 1
+    "ApproximationType" : 2, //H1: 0, Hdiv: 1
     "ProblemType" : 0 //High Permeability: 0, Constant Pressure: 1
   },
   "PressurepOrder": 1,
@@ -24,8 +24,8 @@
     {
       "Name" : "top",
       "matId" : 4,
-      "Type" : 0, //Dirichlet: 0, Neumann: 1
-      "Value" : 1.0
+      "Type" : 1, //Dirichlet: 0, Neumann: 1
+      "Value" : 0.0
     },
     // {
     //   "Name" : "bottom",
@@ -43,7 +43,7 @@
       "Name" : "outlet",
       "matId" : 3,
       "Type" : 0, 
-      "Value" : 1.0
+      "Value" : 10.0
     }
   ],
   "FracBCs" : [ 

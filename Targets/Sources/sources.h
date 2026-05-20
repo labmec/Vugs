@@ -67,25 +67,25 @@ struct BcData {
     TPZManVector<double, 3>  value = {0.0, 0.0, 0.0};
 };
 };
-class ReadJson
+class ReadFracVugData
 {
 public:
     //Constructor
     //@fileName path to the input .json file
     //@This constructor reads and parses the json file,
     //@storing all simulation parameters internally
-    ReadJson(std::string fileName);
+    ReadFracVugData(const std::string& fileName);
     //Methods
     //
     //
     //@Returns the name of the mesh (used for identification/output)
-    std::string MeshName();
+    const std::string& MeshName();
     //@Returns the directory or full path to the mesh file
-    std::string MeshFile();
+    const std::string& MeshFile();
     //@Returns a const reference to the vector containing domain data
     //@Each FracVugData::FracVugData::BcData::FracVugData::BcData::DomData entry represents a material region in the domain
     //const std::vector<FracVugData::FracVugData::BcData::FracVugData::BcData::DomData> &DomainData();
-    std::vector<FracVugData::DomData> DomainData();
+    const std::vector<FracVugData::DomData>& DomainData();
     //@Returns the approximation type used in the simulation
     //@(e.g., mixed, continuous, etc.)
     int approxType();
@@ -97,36 +97,30 @@ public:
     //@Returns the spatial dimension of the problem
     int dim();
     //@Returns the mesh resolution level (refinement indicator)
-
     int resolution();
     //@Returns a vector with boundary condition data
     //@Each FracVugData::BcData represents one boundary condition entry
     //
-    
-    std::vector<FracVugData::BcData> BCInput();
+    const std::vector<FracVugData::BcData>& BCInput();
     //@Returns boundary condition data specifically for fractures
-    std::vector<FracVugData::BcData> FracBCInput();
+    const std::vector<FracVugData::BcData>& FracBCInput();
     //
     //    MATERIAL SETS
-
     //
     //@Set of material IDs associated with vug boundary conditions
     //
     //
     std::set<int> fvugBcIds;
     //@Set of material IDs associated with vug regions
-
     std::set<int> fvugIds;
     //@Set of material IDs associated with fracture boundary conditions
-
     std::set<int> ffracBcIds;
     //@Set of material IDs associated with fracture regions
-
     std::set<int> ffracIds;
 
 
 private:
-    //@Raw json object storing the parsed input file
+        //@Raw json object storing the parsed input file
         json fInputFile;
         
         //@Mesh name (used for identification)
@@ -182,7 +176,7 @@ public:
     //@inputData
     //@filename
     //@meshName
-    TPZGeoMesh* generateGMeshWithPhysTagVec(ReadJson inputData, std::string filename, std::string meshName);
+    TPZGeoMesh* generateGMeshWithPhysTagVec(ReadFracVugData inputData, std::string filename, std::string meshName);
     
     //Create Hdiv mesh giving the specifics mat ids and TPZ mesh
     //@A TPZGeoMesh mesh is needed as a base.
@@ -190,22 +184,22 @@ public:
     //"orderp"??? why not just "order" as in "CreatePressureMesh"
     //@bcId contains a set with  material ids of volume type -1.
     //@input data have all data from .json input file.
-    TPZCompMesh *CreateFluxMesh(TPZGeoMesh *, std::set<int> &volId, std::set<int> &bcId, int &orderp, ReadJson inputData);
+    TPZCompMesh *CreateFluxMesh(TPZGeoMesh *, std::set<int> &volId, std::set<int> &bcId, int &orderp, ReadFracVugData inputData);
     //Create pressure mesh giving the specifics mat ids and TPZ mesh
     //@A TPZGeoMesh mesh is needed as a base.
     //@volId contains a set with  material ids of volume type.
     //order??? why not just orderp as in "CreatePressureMesh"
     //@bcId contains a set with  material ids of volume type -1.
     //@input data have all data from .json input file.
-    TPZCompMesh *CreatePressureMesh(TPZGeoMesh *, std::set<int> &volId, std::set<int> &bcId,int order, ReadJson inputData);
+    TPZCompMesh *CreatePressureMesh(TPZGeoMesh *, std::set<int> &volId, std::set<int> &bcId,int order, ReadFracVugData inputData);
     //Create computational mesh of multiphysicis type
     //@Meshvec contains both the Pressure and Hdiv mesh
     //@input data have all data from .json input file.
-    TPZMultiphysicsCompMesh *CreateMultiMesh(TPZGeoMesh* gmesh, TPZVec<TPZCompMesh *> meshvec, ReadJson inputData);
+    TPZMultiphysicsCompMesh *CreateMultiMesh(TPZGeoMesh* gmesh, TPZVec<TPZCompMesh *> meshvec, ReadFracVugData inputData);
     //Create computational mesh based on a geometric mesh
     //@gmesh is the TPZGeoMesh
     //@input data have all data from .json input file.
-    TPZCompMesh *CreateMesh(TPZGeoMesh* gmesh, ReadJson inputData);
+    TPZCompMesh *CreateMesh(TPZGeoMesh* gmesh, ReadFracVugData inputData);
     //Extracts material ids information from a geometric mesh
     //@volId contains a set with  material ids of volume type.
     //@bcId contains a set with  material ids of volume type -1.
@@ -216,7 +210,7 @@ public:
     //@typeMesh for flux or pr meshe
     //@cmesh is the computational mesh
     //@input data have all data from .json input file.
-    void insertAtomicMaterials(TPZCompMesh *cmesh, std::set<int> matIdsEls, std::set<int> matIdsBcs, int typeMesh, ReadJson inputData);
+    void insertAtomicMaterials(TPZCompMesh *cmesh, std::set<int> matIdsEls, std::set<int> matIdsBcs, int typeMesh, ReadFracVugData inputData);
     //Set the same connect index for a group of elements with the same mat id.
     //@cmesh is the computational mesh
     //@gmesh is the geometric mesh
@@ -226,16 +220,16 @@ public:
     //Fracture contourns(points) are in the range of  XXXX and volume entities in the range of
     //@gmesh is the TPZGeoMesh
     //@input data have all data from .json input file.
-    void MeshWithSegmentPhil(ReadJson inputData, TPZGeoMesh *gmesh);
+    void MeshWithSegmentPhil(ReadFracVugData inputData, TPZGeoMesh *gmesh);
     //Identify vug and fracture entities and give a specific mat id for each one
     //Vugs contourns are in the range of and volume elements in the range of
     //Fracture contourns(points) are in the range of  XXXX and volume entities in the range of
     //@gmesh is the TPZGeoMesh
     //@input data have all data from .json input file.
-    void MeshWithSegment(ReadJson inputData, TPZGeoMesh *gmesh);
+    void MeshWithSegment(ReadFracVugData inputData, TPZGeoMesh *gmesh);
     //Assign value of 1 for the normal side orientation
     //@input data have all data from .json input file.
-    void SideOrientation(TPZCompMesh *cmesh, ReadJson inputData);
+    void SideOrientation(TPZCompMesh *cmesh, ReadFracVugData inputData);
     //Assing value of -1 times  the original gel orientation for fracture normal side orientation
     //@cmesh is the computational mesh.
     void SideOrientation1D(TPZCompMesh *cmesh);
@@ -253,14 +247,14 @@ public:
     //@cmesh is the computational mesh.
     //@gmesh is the geometric mesh
     //input Data is not used?!
-    void InsertInterfaceEls(TPZMultiphysicsCompMesh *cmesh, TPZGeoMesh *gmesh, ReadJson inputData);
+    void InsertInterfaceEls(TPZMultiphysicsCompMesh *cmesh, TPZGeoMesh *gmesh, ReadFracVugData inputData);
     //Matrix assemble and solve is done here.
     //@an is the analysis of the problem
     //@cmesh is the computational mesh.
     //input Data is not used?!
-    void Solve(TPZLinearAnalysis* an, TPZCompMesh* cmesh, ReadJson inputData);
+    void Solve(TPZLinearAnalysis* an, TPZCompMesh* cmesh, ReadFracVugData inputData);
     //This function is not used.
-    void PostProcess(ReadJson inputData);
+    void PostProcess(ReadFracVugData inputData);
     //Print computational mesh in both .txt and .vtk format,
     void PrintCompMesh(TPZCompMesh *cmesh);
     //Print geometric mesh in both .txt and .vtk format.

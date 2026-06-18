@@ -17,7 +17,7 @@
     {
       "Name" : "Vugs",
       "matId" : 6,
-      "Permeability" : 1.0e6
+      "Permeability" : 100
     }
   ],
   "BCs": [
@@ -37,7 +37,7 @@
       "Name" : "inlet",
       "matId" : 2,
       "Type" : 0, 
-      "Value" : 1
+      "Value" : 100
     },
     {
       "Name" : "outlet",

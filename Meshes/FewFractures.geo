@@ -1,12 +1,13 @@
 // Gmsh project created on Tue Mar 17 14:46:21 2026
 //SetFactory("OpenCASCADE");
-cl__1 = 35;
+cl__1 = 60;
+cl__2 = 20;
 Point(1) = {30, 8, 0, cl__1};
 Point(5) = {25, 15, 0, cl__1};
-Point(12) = {0, 0, 0, cl__1};
-Point(13) = {0, 77, 0, cl__1};
-Point(14) = {66, 77, 0, cl__1};
-Point(15) = {66, 0, 0, cl__1};
+Point(12) = {0, 0, 0, cl__2};
+Point(13) = {0, 77, 0, cl__2};
+Point(14) = {66, 77, 0, cl__2};
+Point(15) = {66, 0, 0, cl__2};
 //
 Point(16) = {40, 25, 0, cl__1};
 Point(17) = {35, 40, 0, cl__1};

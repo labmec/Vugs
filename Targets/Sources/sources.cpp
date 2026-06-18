@@ -287,15 +287,6 @@ void SetUniqueVugConnect(TPZGeoMesh *gmesh, TPZCompMesh *cmesh){
         int meshDim = gmesh->Dimension();
         int gelMatId = gel->MaterialId();
 
-        for(int side = 0; side < gel->NCornerNodes(); side++){ // sides associated with vertices
-            TPZGeoElSide gelside(gel, side); // node i of gel
-            TPZCompElSide celside = gelside.Reference();
-            if(origCon_newCon.find(celside.ConnectIndex()) != origCon_newCon.end()){
-                count++;
-                cel->SetConnectIndex(side, origCon_newCon.at(celside.ConnectIndex()));
-            }
-        }
-
         if (fracIds.find(gelMatId) == fracIds.end() && vugIds.find(gelMatId) == vugIds.end() && vugBcIds.find(gelMatId) == vugBcIds.end()) continue; 
 
 
@@ -317,6 +308,24 @@ void SetUniqueVugConnect(TPZGeoMesh *gmesh, TPZCompMesh *cmesh){
             int originalConn = celside.ConnectIndex();
             origCon_newCon.insert({originalConn, connIndex});
             cel->SetConnectIndex(side, connIndex);
+        }
+        TPZInterpolatedElement *intel = dynamic_cast<TPZInterpolatedElement *>(cel);
+        for(int side = nVertex; side < nsides; side++){
+            intel->SetSideOrder(side,1);
+        }
+    }
+    for (int64_t el = 0; el < cmesh->NElements(); el++){
+
+        TPZCompEl *cel = cmesh->Element(el);
+        TPZGeoEl *gel = cel->Reference();
+
+        for(int side = 0; side < gel->NCornerNodes(); side++){ // sides associated with vertices
+            TPZGeoElSide gelside(gel, side); // node i of gel
+            TPZCompElSide celside = gelside.Reference();
+            if(origCon_newCon.find(celside.ConnectIndex()) != origCon_newCon.end()){
+                count++;
+                cel->SetConnectIndex(side, origCon_newCon.at(celside.ConnectIndex()));
+            }
         }
     }
 
@@ -607,11 +616,11 @@ TPZMultiphysicsCompMesh *CreateMultiMesh(TPZGeoMesh* gmesh, TPZVec<TPZCompMesh *
     return cmesh;
 }
 
-
 TPZCompMesh *CreateMesh(TPZGeoMesh* gmesh, ReadJson inputData){
 
     TPZCompMesh *cmesh =  new TPZCompMesh(gmesh);
     cmesh->SetName("CompMesh");
+    cmesh->SetDefaultOrder(2);
 
     std::vector<DomData> domainData = inputData.DomainData();
     std::map<int,double> matId_perm;
@@ -824,6 +833,23 @@ void PrintGeoMesh(TPZGeoMesh *gmesh)
     gmesh->Print(TextGeoMeshFile);
 }
 
+void PrintElement(TPZCompMesh *cmesh, int matId){
+
+    int nel = cmesh->NElements();
+    std::ofstream fileElements("FractureEls.txt", std::ios::app);
+
+    for(int el = 0; el < nel; el++){
+        TPZCompEl* cel = cmesh->Element(el);
+        TPZGeoEl* gel = cel->Reference();
+        if(gel->MaterialId() == matId){
+            gel->Print(fileElements);
+            fileElements << "\n\n";
+            cel->Print(fileElements);
+            fileElements << "\n\n";
+        }
+    }
+    fileElements << "------------------------------------------------------------------------------------------------\n\n";
+}
 
 void SideOrientation(TPZCompMesh *cmesh, ReadJson inputData){ //CheckSideOrientation(TPZCompMesh *cmesh, TPZInterpolationSpace *intEl);
 
@@ -1010,6 +1036,7 @@ REAL ComputeErrorH1Hdiv(TPZVec<TPZCompEl*> &celVecH1, TPZVec<TPZCompEl*> &celVec
         int64_t H1index = celVecH1[el]->Index();
 
         elerror = CalcElementError(celVecH1[el], celVecHdiv[el]);
+        //elerror = CalcEnergy(celVecH1[el], celVecHdiv[el]);
 
         elSolMat(H1index,0) = std::sqrt(elerror);
 
@@ -1084,6 +1111,87 @@ REAL CalcElementError(TPZCompEl* celH1, TPZCompEl* celHdiv){
         for (int i = 0; i < dim; i++) {
             for (int j = 0; j < dim; j++) {
                 aux += (fluxH1(i,0)+solHdiv[i])*InvPerm(i,j)*(fluxH1(j,0)+solHdiv[j]);
+            }
+        }
+
+        result += aux*weight*fabs(detjac);
+    }
+    delete intrule;
+    return result;
+}
+
+REAL CalcEnergy(TPZCompEl* celH1, TPZCompEl* celHdiv){
+
+    REAL result = 0.;
+    if(!celH1 || !celHdiv) {
+        std::cout << "No computational element found!\n";
+        return result;
+    }
+
+    int dim = celH1->Dimension();
+    int matId = celH1->Reference()->MaterialId();
+
+ 
+    TPZMaterial *matH1 = celH1->Material();
+    TPZMaterial *matHdiv = celHdiv->Material();
+
+    //TPZMaterial *mat = cmeshH1->FindMaterial(EMatId);
+    TPZDarcyFlow *matDarcy = dynamic_cast<TPZDarcyFlow*>(matH1); 
+    //downcasting—converting a base class pointer to a derived class pointer
+
+    //const TPZIntPoints intrule = celH1->GetIntegrationRule(); //! Ask
+    TPZGeoEl *gel = celH1->Reference();
+    TPZIntPoints *intrule = gel->CreateSideIntegrationRule(gel->NSides()-1,4); //! not sure order
+    int npoints = intrule->NPoints();
+
+    TPZVec<REAL> xi(dim, 0.0);
+    TPZFNMatrix<9,REAL> jac(dim,dim),jacinv(dim,dim),axes(dim,3); //jacobian
+    REAL detjac;
+
+    TPZVec<STATE> solH1(dim, 0.0);
+    TPZVec<STATE> solH1x(1, 0.0);
+    TPZVec<STATE> solH1y(1, 0.0);
+    TPZVec<STATE> solHdiv(dim, 0.0);
+    TPZFMatrix<STATE> Perm(dim, dim, 0.0), InvPerm(dim, dim, 0.0); 
+
+    // Performing numerical integration
+    for (int point = 0; point < npoints; point++) {
+        REAL weight;
+        intrule->Point(point, xi, weight);
+        gel->Jacobian(xi, jac, axes, detjac, jacinv);
+
+        celH1->Solution(xi, 2, solH1); //GradP
+        celH1->Solution(xi, 3, solH1x); //kGradP
+        celH1->Solution(xi, 4, solH1y); //kGradP
+        celHdiv->Solution(xi, 1, solHdiv); //Flux
+
+        const STATE perm = matDarcy->GetPermeability(xi);
+        const STATE inv_perm = 1 / perm;
+        for (int i = 0; i < dim; i++) {
+            Perm(i, i) = perm;
+            InvPerm(i, i) = inv_perm; //! Check
+        }
+
+        TPZFMatrix<STATE> fluxH1(dim, 1, 0.0);
+        for (int i = 0; i < dim; i++) {
+            for (int j = 0; j < dim; j++) {
+                fluxH1(i,0) += Perm(i,j)*solH1[j];
+            }
+        }
+
+        // fluxH1(0,0) = solH1x[0];
+        // if (dim > 1) fluxH1(1,0) = solH1y[0];
+
+        REAL aux = 0.;
+        // for (int i = 0; i < dim; i++) {
+        //     for (int j = 0; j < dim; j++) {
+        //         aux += (solHdiv[i])*InvPerm(i,j)*(solHdiv[j]);
+        //     }
+        // }
+
+        for (int i = 0; i < dim; i++) {
+            for (int j = 0; j < dim; j++) {
+                aux += solH1[i]*Perm(i,j)*solH1[j];
             }
         }
 

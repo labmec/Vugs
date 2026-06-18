@@ -2,8 +2,8 @@
   "MeshName" : "SeveralVugs2",
   "MeshDirectory" : "/home/marina/programming/Stokes-Darcy-Research/VUGS/Meshes/", 
   "Simulation" : {
-    "ApproximationType" : 0, //H1: 0, Hdiv: 1
-    "ProblemType" : 1 //High Permeability: 0, Constant Pressure: 1
+    "ApproximationType" : 2, //H1: 0, Hdiv: 1
+    "ProblemType" : 0 //High Permeability: 0, Constant Pressure: 1
   },
   "PressurepOrder": 1,
   "Dimension": 2,

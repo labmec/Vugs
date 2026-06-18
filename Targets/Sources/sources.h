@@ -181,6 +181,8 @@ REAL ComputeErrorH1Hdiv(TPZVec<TPZCompEl*> &celVecH1, TPZVec<TPZCompEl*> &celVec
 
 REAL CalcElementError(TPZCompEl* celH1, TPZCompEl* celHdiv);
 
+REAL CalcEnergy(TPZCompEl* celH1, TPZCompEl* celHdiv);
+
 void NewtonMethod(TPZCompMesh *cmesh, int Niterations, REAL res_tol, REAL corr_tol, TPZLinearAnalysis* an);
 
 void BCInitialSolution(TPZLinearAnalysis* an, TPZCompMesh *cmesh, std::set<int> &bcMatids, ReadJson inputData, int condType);
@@ -190,6 +192,8 @@ void ApplyEquationFilter(TPZLinearAnalysis *an, TPZCompMesh *cmesh, std::set<int
 void SetAnalysis(TPZLinearAnalysis* an, TPZCompMesh* cmesh, ReadJson inputData);
 
 void PostProcess(ReadJson inputData);
+
+void PrintElement(TPZCompMesh *cmesh, int matId);
 
 void PrintCompMesh(TPZCompMesh *cmesh);
 

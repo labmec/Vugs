@@ -1,5 +1,5 @@
 {
-  "MeshName" : "FastVug",
+  "MeshName" : "FastVug3D",
   "MeshDirectory" : "/Users/victorvillegassalabarria/Documents/Github/Vugs/NewMeshes/",
   "Simulation" : {
     "ApproximationType" : 1, //H1: 0, Hdiv: 1
@@ -17,33 +17,45 @@
     {
       "Name" : "Vugs",
       "matId" : 6,
-      "Permeability" : 10
+      "Permeability" : 1000
     }
   ],
   "BCs": [
     {
       "Name" : "Top",
       "matId" : 4,
-      "Type" : 1, //Dirichlet: 0, Neumann: 1
-      "Value" : 0
+      "Type" : 0, //Dirichlet: 0, Neumann: 1
+      "Value" : 10
     },
      {
        "Name" : "Bottom",
        "matId" : 8,
+       "Type" : 0,
+       "Value" : 100
+    },
+     {
+       "Name" : "LeftFace",
+       "matId" : 9,
        "Type" : 1,
        "Value" : 0
-     },
+    },
+     {
+       "Name" : "RightFace",
+       "matId" : 11,
+       "Type" : 1,
+       "Value" : 0
+    },
     {
       "Name" : "inlet",
       "matId" : 2,
-      "Type" : 0, 
-      "Value" : 10
+      "Type" : 1,
+      "Value" : 0
     },
     {
       "Name" : "outlet",
       "matId" : 3,
-      "Type" : 0, 
-      "Value" : 100
+      "Type" : 1,
+      "Value" : 0
     }
   ]
 }

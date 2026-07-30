@@ -1,49 +1,61 @@
 {
-  "MeshName" : "rock_volume1",
+  "MeshName" : "FastVug3D",
   "MeshDirectory" : "/Users/victorvillegassalabarria/Documents/Github/Vugs/NewMeshes/",
   "Simulation" : {
     "ApproximationType" : 1, //H1: 0, Hdiv: 1
-    "ProblemType" : 1 //High Permeability: 0, Constant Pressure: 1
+    "ProblemType" : 0 //High Permeability: 0, Constant Pressure: 1
   },
   "PressurepOrder": 1,
   "Dimension": 3,
   "Resolution": 1,
   "DomainData" : [
     {
-      "Name" : "CuboExterno",
+      "Name" : "Darcy",
       "matId" : 1,
       "Permeability" : 0.01
     },
     {
-      "Name" : "Fracture",
-      "matId" : 5,
-      "Permeability" : 1.0e6
+      "Name" : "Vugs",
+      "matId" : 6,
+      "Permeability" : 1
     }
   ],
   "BCs": [
     {
-      "Name" : "UpFace",
+      "Name" : "Top",
       "matId" : 4,
       "Type" : 1, //Dirichlet: 0, Neumann: 1
       "Value" : 0
     },
      {
-       "Name" : "DownFace",
+       "Name" : "Bottom",
        "matId" : 8,
        "Type" : 1,
        "Value" : 0
-     },
+    },
+     {
+       "Name" : "LeftFace",
+       "matId" : 9,
+       "Type" : 0,
+       "Value" : 10
+    },
+     {
+       "Name" : "RightFace",
+       "matId" : 11,
+       "Type" : 0,
+       "Value" : 100
+    },
     {
       "Name" : "inlet",
       "matId" : 2,
-      "Type" : 0, 
-      "Value" : 10
+      "Type" : 1,
+      "Value" : 0
     },
     {
       "Name" : "outlet",
       "matId" : 3,
-      "Type" : 0, 
-      "Value" : 100
+      "Type" : 1,
+      "Value" : 0
     }
   ]
 }

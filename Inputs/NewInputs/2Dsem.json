@@ -1,5 +1,5 @@
 {
-  "MeshName" : "Mallaquad1",
+  "MeshName" : "Mallaquad2",
   "MeshDirectory" : "/Users/victorvillegassalabarria/",
   "Simulation" : {
     "ApproximationType" : 1, //H1: 0, Hdiv: 1
@@ -13,26 +13,17 @@
       "Name" : "k11",
       "matId" : 1,
       "Permeability" : 0.01
-    },
-    {
-      "Name" : "Vugs",
-      "matId" : 6,
-      "Permeability" : 0.01
     }
+    
   ],
   "BCs": [
     {
-      "Name" : "UpFace",
+      "Name" : "noflux",
       "matId" : 4,
-      "Type" : 0, //Dirichlet: 0, Neumann: 1
-      "Value" : 10
+      "Type" : 1, //Dirichlet: 0, Neumann: 1
+      "Value" : 0
     },
-     {
-       "Name" : "DownFace",
-       "matId" : 8,
-       "Type" : 0,
-       "Value" : 10
-     },
+     
     {
       "Name" : "inlet",
       "matId" : 2,
@@ -43,7 +34,7 @@
       "Name" : "outlet",
       "matId" : 3,
       "Type" : 0, 
-      "Value" : 10
+      "Value" : 100
     }
   ]
 }

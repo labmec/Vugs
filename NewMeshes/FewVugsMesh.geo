@@ -91,6 +91,7 @@ Line(48) = {48, 49};
 Line(49) = {49, 50};
 Line(50) = {50, 51};
 Line(51) = {51, 48};
+Physical Curve("noflux", 4) = {49,51};
 
 Curve Loop(44) = {1, 2, 3, 4, 5, 6, 7, 8, 9};
 Plane Surface(44) = {44};
@@ -105,6 +106,7 @@ Plane Surface(1000) = {1000};
 Physical Surface("k11", 1) = {1000};
 Physical Curve("inlet", 2) = {50};
 Physical Curve("outlet", 3) = {48};
-Physical Curve("UpFace", 4) = {49};
-Physical Curve("DownFace", 8) = {51};
+//Physical Curve("UpFace", 4) = {49};
+//Physical Curve("DownFace", 8) = {51};
+
 Physical Surface("Vugs",6)={44,45,46,47};

@@ -7,7 +7,7 @@ void Hdiv_MixedCT(){
     
     TPZGeoMesh *gmesh = new TPZGeoMesh;
     TPZGeoMesh *gmeshp = new TPZGeoMesh;
-
+    
     TPZManVector<std::map<std::string,int>,4> dim_name_and_physical_tagCoarse(4);
     dim_name_and_physical_tagCoarse[2]["k11"] = EMatId;
     dim_name_and_physical_tagCoarse[1]["inlet"] = EbcInletId;
@@ -18,7 +18,7 @@ void Hdiv_MixedCT(){
     //std::string filename="/Users/victorvillegassalabarria/python-test/testskelSLICE77SP.msh";
     //std::string filename="/Users/victorvillegassalabarria/Documents/Github/Vugs/FastMesh.msh";
     //std::string filename="/home/marina/programming/Stokes-Darcy-Research/VUGS/FastMesh.msh";
-    std::string filename="/Users/victorvillegassalabarria/Documents/Github/Vugs/FewVugsMesh.msh";
+    std::string filename="/Users/victorvillegassalabarria/Documents/Github/Vugs/Malhas2D/FewVugsMesh.msh";
     
     std::ofstream file20("TestGeoMesh2D.vtk");
     // std::ofstream file21("Test_cmeshFlux.vtk");
@@ -701,12 +701,13 @@ int Hdiv_MixedCT_PvugConst(){
         delete cmesh_mult;
 }
 int main (){
-    //Hdiv_MixedCT();
     //Hdiv_Fract();
     //Hdiv_MixedCT_constP();
+    
 #ifdef PZ_LOG
     TPZLogger::InitializePZLOG();
 #endif
-    Hdiv_MixedCT_PvugConst();
+    //Hdiv_MixedCT_PvugConst();
+    Hdiv_MixedCT();
     return 0;
 }

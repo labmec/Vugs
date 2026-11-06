@@ -177,3 +177,5 @@ void PostProcess(ReadJson inputData);
 void PrintCompMesh(TPZCompMesh *cmesh);
 
 void PrintGeoMesh(TPZGeoMesh *gmesh);
+
+TPZMultiphysicsCompMesh *CreateMultiMeshPaper(TPZGeoMesh* gmesh, TPZVec<TPZCompMesh *> meshvec, ReadJson inputData);

@@ -20,7 +20,7 @@
     {
       "Name" : "noflux",
       "matId" : 4,
-      "Type" : 1, //Dirichlet: 0, Neumann: 1
+      "Type" : 0, //Dirichlet: 0, Neumann: 1
       "Value" : 0
     },
      

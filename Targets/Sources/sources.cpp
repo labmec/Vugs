@@ -2,6 +2,7 @@
 #define SOURCES_H
 
 #include "sources.h"
+#include "TPZBndCondT.h"
 
 std::set<int> vugBcIds;
 std::set<int> vugIds;
@@ -165,7 +166,7 @@ void MeshWithSegment(ReadJson inputData, TPZGeoMesh *gmesh){
         else if (info.matId == 5) matid_frac = info.matId;
     }
 
-    if (!matid_vug && !matid_frac) DebugStop();
+    // if (!matid_vug && !matid_frac) DebugStop();
     
     TPZVec<int64_t> verificador(nels,-1);
   
@@ -584,6 +585,150 @@ TPZMultiphysicsCompMesh *CreateMultiMesh(TPZGeoMesh* gmesh, TPZVec<TPZCompMesh *
 }
 
 
+ForcingFunctionBCType<REAL> *testf(const TPZVec<REAL> &loc, TPZVec<STATE> &result){
+    int ncord = 1;
+    //result.Resize(ncord);
+    int nval = result.size();
+    REAL x = loc[0];
+    //REAL val =result[0];
+    result[0] = x;
+
+
+};
+
+auto exactSolLinP = [](const TPZVec<REAL>& loc, TPZVec<STATE>& u, TPZFMatrix<STATE>& gradU){
+    const auto& x = loc[0];
+    const auto& y = loc[1];
+   // const auto& z = loc[2];
+    u[0] = y;
+    gradU(0,0)=0.0;
+    gradU(1,0)=0.0;
+    gradU(2,0)=0.0;
+    // Not using derivatives
+};
+
+
+TPZMultiphysicsCompMesh *CreateMultiMeshPaper(TPZGeoMesh* gmesh, TPZVec<TPZCompMesh *> meshvec, ReadJson inputData){
+
+    TPZMultiphysicsCompMesh *cmesh = new TPZMultiphysicsCompMesh(gmesh);
+    cmesh->SetName("MultiMesh");
+    if (meshvec.size() != 2) {
+        std::cout << "It is expected 2 meshes.\n";
+        DebugStop();
+    }
+
+    std::vector<DomData> domainData = inputData.DomainData();
+    std::map<int,double> matId_perm;
+    for(auto info: domainData){
+        matId_perm[info.matId] = info.permeability;
+    }
+
+    std::vector<BcData> bcData = inputData.BCInput();
+    int bcType = 0;
+    int bcId = 0;
+    TPZManVector<double, 3> bcValue;
+    std::vector<BcData> FracbcData = inputData.FracBCInput();
+    
+    // Add materials (weak formulation)
+    TPZMixedDarcyFlow *matDarcy = new TPZMixedDarcyFlow(EMatId, inputData.dim());
+    cmesh->InsertMaterialObject(matDarcy);
+    matDarcy->SetConstantPermeability(matId_perm[EMatId]);
+    
+    for(auto fracId: fracIds) { // Frac elements
+        auto *matDarcyFrac = new TPZMixedDarcyFlow(fracId, 1);
+        //@TODO: Verificar problem type, originalmente 0
+        if(inputData.problemType() == 0){
+            matDarcyFrac->SetConstantPermeability(matId_perm.at(5));
+        }
+        cmesh->InsertMaterialObject(matDarcyFrac);
+    }
+
+    for(auto vugId: vugIds) { // Vug elements
+        auto *matDarcyVug = new TPZMixedDarcyFlow(vugId, inputData.dim());
+        if(inputData.problemType() == 0){
+            matDarcyVug->SetConstantPermeability(matId_perm.at(6));
+        }
+        cmesh->InsertMaterialObject(matDarcyVug);
+    }
+
+    TPZFMatrix<STATE> val1(1,1,0.0);
+    TPZVec<STATE> val2(1,0.0);
+
+    for (auto bc: bcData){
+        bcId = bc.matId;
+        bcType = bc.type;
+        bcValue = bc.value;
+
+        val2[0] = bcValue[0];
+        auto * face = matDarcy->CreateBC(matDarcy, bcId, bcType, val1, val2);
+       
+      
+            face->SetForcingFunctionBC(exactSolLinP, 0);
+        
+            
+        
+        
+
+        
+        cmesh->InsertMaterialObject(face);
+    }
+    // Completar con los matId de BCs donde se desea p=x; ejemplo: {2, 3}.
+        // Con la lista vacia no se activa p=x en ninguna arista.
+//        const std::set<int> openFlowBcIds = {};
+//
+//        for (auto bc: bcData){
+//            bcId = bc.matId;
+//            bcType = bc.type;
+//            bcValue = bc.value;
+//
+//            val2[0] = bcValue[0];
+//            auto *face = matDarcy->CreateBC(matDarcy, bcId, bcType, val1, val2);
+//
+//            if (openFlowBcIds.count(bcId)) {
+//                face->SetType(0); // Presion prescrita; el flujo normal queda libre.
+//                face->SetForcingFunctionBC(
+//                    [](const TPZVec<REAL> &x, TPZVec<STATE> &rhs,
+//                       TPZFMatrix<STATE> &) {
+//                        rhs[0] = x[0]; // p(x,y,z) = x
+//                    },
+//                    1 // Orden de la funcion lineal p=x.
+//                );
+//            }
+//            cmesh->InsertMaterialObject(face);
+//        }
+    
+    
+    val2[0] = 0;
+    for(auto bcId: fracBcIds) { // Frac boundary elements
+        TPZBndCond *faceFrac = matDarcy->CreateBC(matDarcy, bcId, 0, val1, val2);
+        cmesh->InsertMaterialObject(faceFrac);
+    }
+
+    for(auto bcId: vugBcIds) { // Vug boundary elements
+        //if(inputData.problemType() == 0) break;
+        TPZBndCond *faceVug = matDarcy->CreateBC(matDarcy, bcId, 0, val1, val2);
+        cmesh->InsertMaterialObject(faceVug);
+    }
+
+    if (inputData.problemType() == 0 && !fracIds.empty()){ // Frac boundary elements
+        TPZBndCond *endFrac = matDarcy->CreateBC(matDarcy, FracbcData[0].matId, FracbcData[0].type, val1, val2);
+        cmesh->InsertMaterialObject(endFrac);
+    }
+
+    cmesh->ExpandSolution();
+    cmesh->ApproxSpace().Style()= TPZCreateApproximationSpace::EMultiphysics;
+    cmesh->BuildMultiphysicsSpace(meshvec);
+    cmesh->CleanUpUnconnectedNodes();
+
+    CreateInterfaceGeoEls(gmesh);
+    InsertInterfaceEls(cmesh, gmesh, inputData);
+
+    cmesh->InitializeBlock();
+
+    return cmesh;
+}
+
+
 TPZCompMesh *CreateMesh(TPZGeoMesh* gmesh, ReadJson inputData){
 
     TPZCompMesh *cmesh =  new TPZCompMesh(gmesh);
@@ -633,6 +778,18 @@ TPZCompMesh *CreateMesh(TPZGeoMesh* gmesh, ReadJson inputData){
 
         val2[0] = bcValue[0];
         TPZBndCond * face = matDarcy->CreateBC(matDarcy, bcId, bcType, val1, val2);
+        //Boundary condition p=x
+//        auto *bc_face =dynamic_cast<TPZBndCondT<STATE>*>(face);
+//        bc_face->SetForcingFunctionBC(
+//            [](const TPZVec<REAL> &x,
+//                    TPZVec<STATE> &rhs,
+//                    TPZFMatrix<STATE> &mat)
+//                    {
+//                    rhs[0] = x[0];
+//                    },
+//                    2//pOrder
+//            );
+        //Boundary condiiton p=x
         cmesh->InsertMaterialObject(face);
     }
 
